@@ -1,0 +1,164 @@
+﻿using POOfase1trabalho13_11.Models.Entities;
+using POOfase1trabalho13_11.Models.Enums;
+using POOfase1trabalho13_11.Models.Repositories.Interfaces;
+using POOfase1trabalho13_11.Models.Services.Interfaces;
+
+namespace POOfase1trabalho13_11.Models.Services.Implementations
+{
+    public class ReservaService : IReservaService
+    {
+        private readonly IReservaRepository _reservaRepo;
+        private readonly IAlojamentoRepository _alojamentoRepo;
+        private readonly IClienteRepository _clienteRepo;
+        private readonly IRegistoRepository _registoRepo;
+
+        // Injeção de Dependência via Construtor
+        public ReservaService(
+            IReservaRepository reservaRepo,
+            IAlojamentoRepository alojamentoRepo,
+            IClienteRepository clienteRepo,
+            IRegistoRepository registoRepo)
+        {
+            _reservaRepo = reservaRepo;
+            _alojamentoRepo = alojamentoRepo;
+            _clienteRepo = clienteRepo;
+            _registoRepo = registoRepo;
+        }
+
+        public bool RealizarReserva(int clienteId, int alojamentoId, DateTime checkIn, DateTime checkOut, int numHospedes, out string mensagem)
+        {
+            // 1. Validações de Negócio
+            var cliente = _clienteRepo.GetById(clienteId);
+            if (cliente == null) { mensagem = "Cliente não encontrado."; return false; }
+
+            var alojamento = _alojamentoRepo.GetById(alojamentoId);
+            if (alojamento == null) { mensagem = "Alojamento não encontrado."; return false; }
+
+            // Validação de Datas Básica
+            if (checkIn >= checkOut) { mensagem = "Data de Check-In deve ser anterior ao Check-Out."; return false; }
+
+            
+            if (ExisteConflitoDeDatas(alojamentoId, checkIn, checkOut))
+            {
+                mensagem = "O alojamento já está ocupado no período selecionado.";
+                return false;
+            }
+            
+
+            
+            if (alojamento.Estado != EstadoAlojamento.Disponivel)
+            {
+                mensagem = $"O alojamento não pode receber reservas (Estado: {alojamento.Estado}).";
+                return false;
+            }
+
+            if (numHospedes > alojamento.Capacidade) { mensagem = "Número de hóspedes excede a capacidade."; return false; }
+
+            try
+            {
+                // 2. Criar a Entidade
+                var novaReserva = new Reserva(
+                    0,
+                    clienteId,
+                    alojamentoId,
+                    checkIn,
+                    checkOut,
+                    numHospedes,
+                    "Reserva criada via sistema",
+                    EstadoReserva.Pendente,
+                    DateTime.Now
+                );
+
+                // 3. Persistência
+                _reservaRepo.Add(novaReserva);
+
+                // 4. Log de Auditoria
+                _registoRepo.Add(new Registo(
+                    0,
+                    "Reserva",
+                    $"Nova reserva ID {novaReserva.Id} para o cliente {cliente.Nome}",
+                    "Sistema",
+                    "CREATE",
+                    novaReserva.Id,
+                    DateTime.Now
+                ));
+
+                mensagem = $"Reserva {novaReserva.Id} realizada com sucesso!";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                mensagem = $"Erro interno ao processar reserva: {ex.Message}";
+                return false;
+            }
+        }
+
+        public bool CancelarReserva(int reservaId, string motivo, out string mensagem)
+        {
+            var reserva = _reservaRepo.GetById(reservaId);
+            if (reserva == null) { mensagem = "Reserva não encontrada."; return false; }
+
+            reserva.Cancelar();
+            reserva.Observacoes += $" | Cancelamento: {motivo}";
+
+            _reservaRepo.Update(reserva);
+
+            _registoRepo.Add(new Registo(0, "Reserva", motivo, "Sistema", "CANCEL", reservaId, DateTime.Now));
+
+            mensagem = "Reserva cancelada com sucesso.";
+            return true;
+        }
+
+
+        public bool EfetuarCheckIn(int reservaId, out string mensagem)
+        {
+            var reserva = _reservaRepo.GetById(reservaId);
+            if (reserva == null) { mensagem = "Reserva não encontrada."; return false; }
+
+            if (reserva.Estado != EstadoReserva.Confirmada)
+            {
+                mensagem = "Só pode fazer Check-in de reservas já Confirmadas.";
+                return false;
+            }
+
+            reserva.Estado = EstadoReserva.CheckInRealizado;
+            _reservaRepo.Update(reserva);
+            mensagem = "Check-in efetuado com sucesso!";
+            return true;
+        }
+
+        public bool EfetuarCheckOut(int reservaId, out string mensagem)
+        {
+            var reserva = _reservaRepo.GetById(reservaId);
+            if (reserva == null) { mensagem = "Reserva não encontrada."; return false; }
+
+            if (reserva.Estado != EstadoReserva.CheckInRealizado)
+            {
+                mensagem = "Só pode fazer Check-out de reservas que já fizeram Check-in.";
+                return false;
+            }
+
+            reserva.Estado = EstadoReserva.CheckOutRealizado;
+            _reservaRepo.Update(reserva);
+            mensagem = "Check-out efetuado com sucesso!";
+            return true;
+        }
+
+        public IEnumerable<Reserva> ObterTodasReservas()
+        {
+           
+            return _reservaRepo.GetAll();
+        }
+
+        private bool ExisteConflitoDeDatas(int alojamentoId, DateTime novoCheckIn, DateTime novoCheckOut)
+        {
+            
+            var reservasNoAlojamento = _reservaRepo.GetAll()
+                .Where(r => r.AlojamentoId == alojamentoId && r.Estado != EstadoReserva.Cancelada);
+
+            
+            return reservasNoAlojamento.Any(r =>
+                novoCheckIn < r.DataCheckOut && novoCheckOut > r.DataCheckIn);
+        }
+    }
+}

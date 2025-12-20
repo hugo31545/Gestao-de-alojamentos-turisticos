@@ -1,0 +1,33 @@
+﻿<Application x:Class="POOfase1trabalho13_11.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:POOfase1trabalho13_11"
+             xmlns:vm="clr-namespace:POOfase1trabalho13_11.ViewModels"
+             xmlns:v="clr-namespace:POOfase1trabalho13_11.Views">
+
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <DataTemplate DataType="{x:Type vm:AlojamentoViewModel}">
+                <v:AlojamentoControl />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:ClienteViewModel}">
+                <v:ClienteView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:ReservaViewModel}">
+                <v:ReservasView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:RegistryViewModel}">
+                <v:RegistryView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:AuditoriaViewModel}">
+                <v:AuditoriaView />
+            </DataTemplate>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

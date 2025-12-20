@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="POOfase1trabalho13_11.Models.Entities.Alojamento">
+    <Position X="4.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACZAAQAAABAAAEIBBAQBAAAAgBAAAAAEAAAAEAEAw=</HashCode>
+      <FileName>Models\Entities\Alojamento.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="POOfase1trabalho13_11.Models.Entities.CheckIn">
+    <Position X="7.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAEACAAAAAAEAAAAAAAACAQAAAAAAA=</HashCode>
+      <FileName>Models\Entities\CheckIn.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="POOfase1trabalho13_11.Models.Entities.Cliente">
+    <Position X="1" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAgCAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAAI=</HashCode>
+      <FileName>Models\Entities\Cliente.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="POOfase1trabalho13_11.Models.Entities.Consulta">
+    <Position X="2.75" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAEAAAAAAAAAEAAQAAAQAAAAAAAAAAAAgAAgAAAA=</HashCode>
+      <FileName>Models\Entities\Consulta.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="POOfase1trabalho13_11.Models.Entities.Registo">
+    <Position X="1" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAABAAAEACAAAAAAAAAAAAAAAAAIAAACAAA=</HashCode>
+      <FileName>Models\Entities\Registo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="POOfase1trabalho13_11.Models.Entities.Reserva">
+    <Position X="2.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAEIACQAAAAAAACAAAAAACAQAAAABg=</HashCode>
+      <FileName>Models\Entities\Reserva.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Enum Name="POOfase1trabalho13_11.Models.Entities.Enums.EstadoAlojamento">
+    <Position X="1" Y="8" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAKAAAAAAIAAACAAAAAAAAAAAAAAAAAABAAA=</HashCode>
+      <FileName>Models\Entities\Enums\EstadoAlojamento.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="POOfase1trabalho13_11.Models.Entities.Enums.EstadoReserva">
+    <Position X="3" Y="8" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAIAAQEAAA=</HashCode>
+      <FileName>Models\Entities\Enums\EstadoReserva.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

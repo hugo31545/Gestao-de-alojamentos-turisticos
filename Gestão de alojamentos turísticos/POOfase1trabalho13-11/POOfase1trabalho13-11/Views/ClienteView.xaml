@@ -1,0 +1,79 @@
+﻿<UserControl x:Class="POOfase1trabalho13_11.Views.ClienteView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="500" d:DesignWidth="850" Background="White">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Gestão de Clientes" FontSize="22" FontWeight="Bold" Margin="0,0,0,15" Foreground="#2C3E50"/>
+
+        <Border Grid.Row="1" Background="Beige" Padding="15" CornerRadius="5" Margin="0,0,0,20">
+            <StackPanel>
+                <WrapPanel Orientation="Horizontal">
+                    <StackPanel Margin="5">
+                        <Label Content="Nome do Cliente"/>
+                        <TextBox Width="200" Text="{Binding ClienteEmEdicao.Nome, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="5">
+                        <Label Content="E-mail"/>
+                        <TextBox Width="180" Text="{Binding ClienteEmEdicao.Email, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="5">
+                        <Label Content="NIF (9 dígitos)"/>
+                        <TextBox Width="100" Text="{Binding ClienteEmEdicao.Nif, UpdateSourceTrigger=PropertyChanged}" MaxLength="9"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="5">
+                        <Label Content="Telefone"/>
+                        <TextBox Width="120" Text="{Binding ClienteEmEdicao.Telefone, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </WrapPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,5,0">
+                    <Button Content="Limpar / Novo" 
+                            Command="{Binding NovoCommand}" 
+                            Width="100" Height="30" Margin="5,0"/>
+
+                    <Button Content="Gravar" 
+                            Command="{Binding GravarCommand}" 
+                            Width="100" Height="30" Margin="5,0"
+                            Background="#27AE60" Foreground="White" FontWeight="Bold"/>
+
+                    <Button Content="Remover" 
+                            Command="{Binding RemoverCommand}" 
+                            Width="100" Height="30" Margin="5,0"
+                            Background="LightCoral" FontWeight="Bold"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding ListaClientes}" 
+                  SelectedItem="{Binding ClienteSelecionado}"
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  Background="Transparent"
+                  BorderThickness="1"
+                  BorderBrush="#DDD">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                <DataGridTextColumn Header="Nome" Binding="{Binding Nome}" Width="*"/>
+                <DataGridTextColumn Header="NIF" Binding="{Binding Nif}" Width="100"/>
+                <DataGridTextColumn Header="E-mail" Binding="{Binding Email}" Width="150"/>
+                <DataGridTextColumn Header="Telefone" Binding="{Binding Telefone}" Width="100"/>
+                <DataGridTextColumn Header="Data Registo" Binding="{Binding DataRegisto, StringFormat={}{0:dd/MM/yyyy HH:mm}}" Width="130"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

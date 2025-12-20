@@ -1,0 +1,147 @@
+﻿using Moq;
+using NUnit.Framework;
+using POOfase1trabalho13_11.Models.Entities;
+using POOfase1trabalho13_11.Models.Repositories.Interfaces;
+using POOfase1trabalho13_11.Models.Services.Implementations;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace POOfase1trabalho13_11.Tests.Services
+{
+    [TestFixture]
+    public class ClienteServiceTests
+    {
+        private Mock<IClienteRepository> _mockClienteRepo;
+        private Mock<IRegistoRepository> _mockRegistoRepo;
+        private ClienteService _clienteService;
+
+        [SetUp]
+        public void Setup()
+        {
+            _mockClienteRepo = new Mock<IClienteRepository>();
+            _mockRegistoRepo = new Mock<IRegistoRepository>();
+            _clienteService = new ClienteService(_mockClienteRepo.Object, _mockRegistoRepo.Object);
+        }
+
+        #region Testes de Registo
+
+        [Test]
+        public void RegistarCliente_NifDuplicado_RetornaFalse()
+        {
+            // Arrange
+            var novoCliente = new Cliente { Nif = "123456789", Email = "novo@test.com" };
+           
+            _mockClienteRepo.Setup(r => r.GetByNif("123456789")).Returns(new Cliente());
+
+            // Act
+            bool resultado = _clienteService.RegistarCliente(novoCliente, out string mensagem);
+
+            // Assert
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("NIF"));
+            _mockClienteRepo.Verify(r => r.Add(It.IsAny<Cliente>()), Times.Never);
+        }
+
+        [Test]
+        public void RegistarCliente_EmailDuplicado_RetornaFalse()
+        {
+            // Arrange
+            var novoCliente = new Cliente { Nif = "999999999", Email = "existente@test.com" };
+            _mockClienteRepo.Setup(r => r.GetByNif(It.IsAny<string>())).Returns((Cliente)null);
+            
+            _mockClienteRepo.Setup(r => r.GetByEmail("existente@test.com")).Returns(new Cliente());
+
+            // Act
+            bool resultado = _clienteService.RegistarCliente(novoCliente, out string mensagem);
+
+            // Assert
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("e-mail"));
+        }
+
+        [Test]
+        public void RegistarCliente_Sucesso_DefineDataERegistaLog()
+        {
+            // Arrange
+            var novoCliente = new Cliente { Id = 10, Nome = "Joaquim", Nif = "111", Email = "j@t.com" };
+            _mockClienteRepo.Setup(r => r.GetByNif(It.IsAny<string>())).Returns((Cliente)null);
+            _mockClienteRepo.Setup(r => r.GetByEmail(It.IsAny<string>())).Returns((Cliente)null);
+
+            // Act
+            bool resultado = _clienteService.RegistarCliente(novoCliente, out string mensagem);
+
+            // Assert
+            Assert.IsTrue(resultado);
+            Assert.That(novoCliente.DataRegisto.Date, Is.EqualTo(DateTime.Now.Date));
+            _mockRegistoRepo.Verify(r => r.Add(It.Is<Registo>(l => l.Operacao == "CREATE")), Times.Once);
+        }
+
+        #endregion
+
+        #region Testes de Atualização e Remoção
+
+        [Test]
+        public void AtualizarDados_NifJaPertenceAOutroCliente_RetornaFalse()
+        {
+            // Arrange
+            var clienteEditado = new Cliente { Id = 1, Nif = "123", Nome = "Editado" };
+            
+            _mockClienteRepo.Setup(r => r.GetByNif("123")).Returns(new Cliente { Id = 2, Nif = "123" });
+
+            // Act
+            bool resultado = _clienteService.AtualizarDados(clienteEditado, out string mensagem);
+
+            // Assert
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("NIF indicado já pertence a outro"));
+        }
+
+        [Test]
+        public void AtualizarDados_Sucesso_ChamaUpdateERegistaLog()
+        {
+            // Arrange
+            var cliente = new Cliente { Id = 1, Nif = "123" };
+            _mockClienteRepo.Setup(r => r.GetByNif("123")).Returns(cliente); 
+            _mockClienteRepo.Setup(r => r.Update(cliente)).Returns(true);
+
+            // Act
+            bool resultado = _clienteService.AtualizarDados(cliente, out string mensagem);
+
+            // Assert
+            Assert.IsTrue(resultado);
+            _mockRegistoRepo.Verify(r => r.Add(It.Is<Registo>(l => l.Operacao == "UPDATE")), Times.Once);
+        }
+
+        [Test]
+        public void RemoverCliente_Inexistente_RetornaFalse()
+        {
+            // Arrange
+            _mockClienteRepo.Setup(r => r.Remove(99)).Returns(false);
+
+            // Act
+            bool resultado = _clienteService.RemoverCliente(99, out string mensagem);
+
+            // Assert
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("não encontrado"));
+            _mockRegistoRepo.Verify(r => r.Add(It.IsAny<Registo>()), Times.Never);
+        }
+
+        [Test]
+        public void RemoverCliente_Sucesso_RegistaDelete()
+        {
+            // Arrange
+            _mockClienteRepo.Setup(r => r.Remove(1)).Returns(true);
+
+            // Act
+            bool resultado = _clienteService.RemoverCliente(1, out string mensagem);
+
+            // Assert
+            Assert.IsTrue(resultado);
+            _mockRegistoRepo.Verify(r => r.Add(It.Is<Registo>(l => l.Operacao == "DELETE")), Times.Once);
+        }
+
+        #endregion
+    }
+}
