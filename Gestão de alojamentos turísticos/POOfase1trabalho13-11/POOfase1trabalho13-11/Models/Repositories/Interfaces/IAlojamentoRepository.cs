@@ -1,12 +1,4 @@
-﻿//-----------------------------------------------------------------
-//     <copyright file="IAlojamentoRepository.cs" company="IPCA">
-//       Copyright IPCA-EST. All rights reserved.
-//     </copyright>
-//     <date>15-12-2025</date>
-//     <time>15:25</time>
-//     <version>0.1</version>
-//     <author>Gemini (Adaptado de Ernesto Casanova)</author>
-//-----------------------------------------------------------------
+﻿
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 
