@@ -142,7 +142,7 @@ namespace POOfase1trabalho13_11.ViewModels
             _clienteService = clienteService;
             _alojamentoService = alojamentoService;
 
-            // Atualizado para aceitar parâmetro (p)
+            
             CriarReservaCommand = new ViewModelCommand(p => ExecutarCriarReserva(), p => PodeReservar());
             CancelarReservaCommand = new ViewModelCommand(p => ExecutarCancelar(p), p => true);
             CarregarDadosCommand = new ViewModelCommand(p => CarregarDados());
@@ -183,7 +183,7 @@ namespace POOfase1trabalho13_11.ViewModels
 
         private void ExecutarCheckIn(object? parameter)
         {
-            // Se o parâmetro vier do botão da linha, usa-o. Senão, usa a ReservaSelecionada no clique da tabela.
+            
             var reserva = parameter as Reserva ?? ReservaSelecionada;
             if (reserva == null) return;
 
@@ -191,7 +191,7 @@ namespace POOfase1trabalho13_11.ViewModels
             if (reserva.Estado == EstadoReserva.Pendente)
             {
                 reserva.Estado = EstadoReserva.Confirmada;
-                // Opcional: _reservaRepo.Update(reserva) através de um método no service
+               
             }
 
             if (_reservaService.EfetuarCheckIn(reserva.Id, out string msg))
@@ -249,9 +249,9 @@ namespace POOfase1trabalho13_11.ViewModels
             // 2. Atualizar Alojamentos Livres
             AtualizarAlojamentosDisponiveis();
 
-            // 3. CARREGAR AS RESERVAS (O que faltava!)
+            // 3. CARREGAR AS RESERVAS 
             ListaReservas.Clear();
-            // Certifica-te que o teu IReservaService tem o método ObterTodasReservas() ou ObterTodas()
+            
             var reservas = _reservaService.ObterTodasReservas();
 
             foreach (var r in reservas)

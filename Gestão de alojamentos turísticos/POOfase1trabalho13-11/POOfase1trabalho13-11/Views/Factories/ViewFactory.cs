@@ -22,7 +22,7 @@ namespace POOfase1trabalho13_11.Views.Factories
         #region Public Methods
 
         /// <summary>
-        /// Cria uma janela, associa a sua ViewModel correspondente e configura ações de fecho.
+        /// Cria uma janela, associa a ViewModel correspondente e configura ações de fecho.
         /// </summary>
         /// <param name="type">Tipo de view solicitada.</param>
         /// <param name="parameter">Parâmetro opcional para janelas de edição.</param>

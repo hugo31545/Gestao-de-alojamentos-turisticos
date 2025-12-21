@@ -128,7 +128,7 @@ namespace POOfase1trabalho13_11.ViewModels
                 // 2. EXECUÇÃO DA CRIAÇÃO (Ordem lógica)
 
                 // Primeiro tentamos criar o User (Login)
-                // Nota: O seu CreateUser já verifica se o username existe.
+               
                 bool userCriado = _authService.CreateUser(Email, Password, PasswordConfirmacao);
 
                 if (!userCriado)

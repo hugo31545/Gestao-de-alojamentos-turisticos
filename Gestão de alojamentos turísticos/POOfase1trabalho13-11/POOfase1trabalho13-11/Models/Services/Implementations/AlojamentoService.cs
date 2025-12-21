@@ -148,7 +148,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
 
         #endregion
 
-        #region Private Helpers
+        #region  Helpers
         private void GerarRegisto(string entidade, string acao, string detalhe, int refId)
         {
             _registoRepository.Add(new Registo(0, entidade, detalhe, "Sistema", acao, refId, DateTime.Now));

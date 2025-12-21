@@ -17,7 +17,7 @@ namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
         Cliente? GetByNif(string nif);
 
         /// <summary>
-        /// Procura um cliente pelo Email (Renomeado de BuscarPorEmail para GetByEmail).
+        /// Procura um cliente pelo Email.
         /// </summary>
         Cliente? GetByEmail(string email);
 
