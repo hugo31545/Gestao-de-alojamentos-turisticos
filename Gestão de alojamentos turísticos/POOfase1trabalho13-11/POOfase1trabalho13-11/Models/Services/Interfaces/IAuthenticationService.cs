@@ -1,4 +1,11 @@
-﻿namespace POOfase1trabalho13_11.Models.Services.Interfaces
+﻿//-----------------------------------------------------------------
+//    <copyright file="IAuthenticationService.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+namespace POOfase1trabalho13_11.Models.Services.Interfaces
 
 {
     /// <summary>

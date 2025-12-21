@@ -1,18 +1,36 @@
-﻿using POOfase1trabalho13_11.Models.Entities;
+﻿//-----------------------------------------------------------------
+//    <copyright file="ReservaService.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 
 namespace POOfase1trabalho13_11.Models.Services.Implementations
 {
+
+    /// <summary>
+    /// Fornece serviços para a gestão completa do ciclo de vida de reservas.
+    /// Inclui validação de disponibilidade, gestão de estados e auditoria de operações.
+    /// </summary>
     public class ReservaService : IReservaService
     {
+
+        #region Fields
         private readonly IReservaRepository _reservaRepo;
         private readonly IAlojamentoRepository _alojamentoRepo;
         private readonly IClienteRepository _clienteRepo;
         private readonly IRegistoRepository _registoRepo;
+        #endregion
 
-        // Injeção de Dependência via Construtor
+        #region Constructors
+        /// <summary>
+        /// Inicializa o serviço injetando as dependências necessárias para a operação de reservas.
+        /// </summary>
         public ReservaService(
             IReservaRepository reservaRepo,
             IAlojamentoRepository alojamentoRepo,
@@ -24,28 +42,33 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             _clienteRepo = clienteRepo;
             _registoRepo = registoRepo;
         }
+        #endregion
 
+        #region Public Methods
+
+        /// <summary>
+        /// Cria uma nova reserva após validar cliente, alojamento, capacidade e disponibilidade de datas.
+        /// </summary>
         public bool RealizarReserva(int clienteId, int alojamentoId, DateTime checkIn, DateTime checkOut, int numHospedes, out string mensagem)
         {
-            // 1. Validações de Negócio
+            // 1. Validações de Existência
             var cliente = _clienteRepo.GetById(clienteId);
             if (cliente == null) { mensagem = "Cliente não encontrado."; return false; }
 
             var alojamento = _alojamentoRepo.GetById(alojamentoId);
             if (alojamento == null) { mensagem = "Alojamento não encontrado."; return false; }
 
-            // Validação de Datas Básica
+            // 2. Validação de Datas
             if (checkIn >= checkOut) { mensagem = "Data de Check-In deve ser anterior ao Check-Out."; return false; }
 
-            
+            // 3. Validação de Disponibilidade (Conflito de Calendário)
             if (ExisteConflitoDeDatas(alojamentoId, checkIn, checkOut))
             {
                 mensagem = "O alojamento já está ocupado no período selecionado.";
                 return false;
             }
-            
 
-            
+
             if (alojamento.Estado != EstadoAlojamento.Disponivel)
             {
                 mensagem = $"O alojamento não pode receber reservas (Estado: {alojamento.Estado}).";
@@ -56,7 +79,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
 
             try
             {
-                // 2. Criar a Entidade
+                // Criar a Entidade
                 var novaReserva = new Reserva(
                     0,
                     clienteId,
@@ -69,10 +92,10 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                     DateTime.Now
                 );
 
-                // 3. Persistência
+                //  Persistência
                 _reservaRepo.Add(novaReserva);
 
-                // 4. Log de Auditoria
+                // Log de Auditoria
                 _registoRepo.Add(new Registo(
                     0,
                     "Reserva",
@@ -93,6 +116,10 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             }
         }
 
+
+        /// <summary>
+        /// Cancela uma reserva existente e liberta o período no calendário.
+        /// </summary>
         public bool CancelarReserva(int reservaId, string motivo, out string mensagem)
         {
             var reserva = _reservaRepo.GetById(reservaId);
@@ -110,6 +137,10 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         }
 
 
+
+        /// <summary>
+        /// Atualiza o estado da reserva para Check-In realizado.
+        /// </summary>
         public bool EfetuarCheckIn(int reservaId, out string mensagem)
         {
             var reserva = _reservaRepo.GetById(reservaId);
@@ -127,6 +158,10 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             return true;
         }
 
+
+        /// <summary>
+        /// Finaliza a reserva após o Check-Out.
+        /// </summary>
         public bool EfetuarCheckOut(int reservaId, out string mensagem)
         {
             var reserva = _reservaRepo.GetById(reservaId);
@@ -144,12 +179,20 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             return true;
         }
 
+
+        /// <summary>
+        /// Retorna a lista completa de reservas.
+        /// </summary>
         public IEnumerable<Reserva> ObterTodasReservas()
         {
            
             return _reservaRepo.GetAll();
         }
 
+
+        /// <summary>
+        /// Lógica de sobreposição de períodos: (StartA < EndB) AND (EndA > StartB).
+        /// </summary>
         private bool ExisteConflitoDeDatas(int alojamentoId, DateTime novoCheckIn, DateTime novoCheckOut)
         {
             
@@ -160,5 +203,6 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             return reservasNoAlojamento.Any(r =>
                 novoCheckIn < r.DataCheckOut && novoCheckOut > r.DataCheckIn);
         }
+        #endregion
     }
 }

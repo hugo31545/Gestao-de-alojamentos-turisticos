@@ -1,4 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿//-----------------------------------------------------------------
+//    <copyright file="ViewFactory.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using Microsoft.Extensions.DependencyInjection;
 using POOfase1trabalho13_11.ViewModels;
 using POOfase1trabalho13_11.Views.Enums;
 using POOfase1trabalho13_11.Views.Interfaces;
@@ -7,8 +14,9 @@ using System.Windows;
 namespace POOfase1trabalho13_11.Views.Factories
 {
     /// <summary>
-    /// Fábrica responsável pela criação e inicialização de janelas WPF.
-    /// Centraliza a lógica de injeção de dependências nas Views.
+    /// Fábrica responsável pela criação, mapeamento e inicialização de janelas WPF.
+    /// Centraliza a lógica de Injeção de Dependências, garantindo que as Views e ViewModels
+    /// recebam os serviços necessários via ServiceProvider.
     /// </summary>
     public class ViewFactory : IViewFactory
     {

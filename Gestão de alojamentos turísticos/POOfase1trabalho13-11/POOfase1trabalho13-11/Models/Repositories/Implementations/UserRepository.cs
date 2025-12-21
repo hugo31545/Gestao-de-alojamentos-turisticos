@@ -1,19 +1,24 @@
-﻿
-
+﻿//-----------------------------------------------------------------
+//    <copyright file="UserRepository.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 
 namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 {
     /// <summary>
-    /// Repositório especializado para a gestão de utilizadores (autenticação).
-    /// Herda a lógica de persistência JSON da classe base genérica.
+    /// Repositório especializado para a gestão de utilizadores e autenticação.
+    /// Herda a lógica de persistência JSON da classe base genérica <see cref="JsonRepository{T}"/>.
     /// </summary>
     public class UserRepository : JsonRepository<User>, IUserRepository
     {
         #region Constructors
 
         /// <summary>
-        /// Inicializa o repositório de utilizadores apontando para o ficheiro users.json.
+        /// Inicializa uma nova instância de <see cref="UserRepository"/> apontando para o ficheiro "users.json".
         /// </summary>
         public UserRepository() : base("users.json")
         {
@@ -24,9 +29,9 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         #region Public Methods
 
         /// <summary>
-        /// Procura um utilizador pelo seu nome de utilizador único.
+        /// Procura um utilizador pelo seu nome de utilizador único, ignorando maiúsculas e minúsculas.
         /// </summary>
-        /// <param name="username">O username a pesquisar.</param>
+        /// <param name="username">O nome de utilizador a pesquisar.</param>
         /// <returns>A entidade <see cref="User"/> se encontrada; caso contrário, null.</returns>
         public User? GetUserByUsername(string username)
         {
@@ -37,21 +42,21 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         }
 
         /// <summary>
-        /// Cria um novo utilizador e persiste-o no armazenamento JSON.
+        /// Cria um novo utilizador, atribui um ID único e persiste os dados no ficheiro JSON.
         /// </summary>
-        /// <param name="username">Nome de utilizador</param>
-        /// <param name="password">Palavra-passe</param>
-        /// <returns>True se o utilizador foi criado; False se já existir.</returns>
+        /// <param name="username">Nome de utilizador pretendido.</param>
+        /// <param name="password">Palavra-passe (deve ser tratada com hash em produção).</param>
+        /// <returns>True se o utilizador foi criado com sucesso; False se o nome de utilizador já existir.</returns>
         public bool CreateUser(string username, string password)
         {
-            // 1. Validação 
+            // 1. Validação de Unicidade: impede a criação de usernames duplicados
             if (GetUserByUsername(username) != null)
                 return false;
 
-            // 2. Gerar ID (procurar o maior ID atual e somar 1)
+            // 2. Gerar ID de auto-incremento
             int novoId = Items.Any() ? Items.Max(u => u.Id) + 1 : 1;
 
-            // 3. Criar e Adicionar
+            // 3. Instanciar o novo objeto User
             var novoUser = new User
             {
                 Id = novoId,
@@ -60,7 +65,7 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
                 DataRegisto = DateTime.Now
             };
 
-            
+            // 4. Adicionar à lista e disparar a gravação física no ficheiro via classe base
             Add(novoUser);
 
             return true;

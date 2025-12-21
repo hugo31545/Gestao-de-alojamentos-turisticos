@@ -1,4 +1,11 @@
-﻿using POOfase1trabalho13_11.Exceptions;
+﻿//-----------------------------------------------------------------
+//    <copyright file="AlojamentoViewModel.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Exceptions;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
@@ -11,6 +18,11 @@ using System.Windows.Input;
 
 namespace POOfase1trabalho13_11.ViewModels
 {
+
+    /// <summary>
+    /// ViewModel responsável pela lógica de interação da vista de Gestão de Alojamentos.
+    /// Coordena a listagem, criação, edição e remoção de unidades de alojamento.
+    /// </summary>
     public class AlojamentoViewModel : BaseViewModel
     {
         #region Fields
@@ -23,15 +35,20 @@ namespace POOfase1trabalho13_11.ViewModels
         #endregion
 
         #region Properties
-        
 
+        /// <summary>
+        /// Coleção de alojamentos ligada à DataGrid ou ListView da View.
+        /// </summary>
         public ObservableCollection<Alojamento> ListaAlojamentos
         {
             get => _listaAlojamentos;
             set { _listaAlojamentos = value; OnPropertyChanged(nameof(ListaAlojamentos)); }
         }
 
-        
+        /// <summary>
+        /// Obtém ou define o alojamento selecionado na lista. 
+        /// Ao ser alterado, prepara uma cópia para edição.
+        /// </summary>
         public Alojamento? AlojamentoSelecionado
         {
             get => _alojamentoSelecionado;
@@ -45,6 +62,9 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+        /// <summary>
+        /// Objeto temporário que contém os dados atuais do formulário de entrada.
+        /// </summary>
         public Alojamento AlojamentoEmEdicao
         {
             get => _alojamentoEmEdicao;
@@ -56,6 +76,9 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+        /// <summary>
+        /// Texto informativo exibido na barra de estado da aplicação.
+        /// </summary>
         public string MensagemStatus
         {
             get => _mensagemStatus;
@@ -73,12 +96,17 @@ namespace POOfase1trabalho13_11.ViewModels
 
 
         #region Constructor
+
+        /// <summary>
+        /// Inicializa a ViewModel e injeta as dependências necessárias.
+        /// </summary>
         public AlojamentoViewModel(IAlojamentoService alojamentoService)
         {
             _alojamentoService = alojamentoService ?? throw new ArgumentNullException(nameof(alojamentoService));
             _listaAlojamentos = new ObservableCollection<Alojamento>();
             _alojamentoEmEdicao = new Alojamento();
 
+            // Inicialização dos comandos com as respetivas ações e validações
             AdicionarAlojamentoCommand = new ViewModelCommand(p => ExecutarGravar(), p => PodeGravar());
             NovoCommand = new ViewModelCommand(p => ExecutarNovo());
             RemoverAlojamentoCommand = new ViewModelCommand(p => ExecutarRemover(), p => AlojamentoSelecionado != null);
@@ -92,6 +120,10 @@ namespace POOfase1trabalho13_11.ViewModels
 
         #region Methods
 
+
+        /// <summary>
+        /// Carrega ou atualiza a coleção de alojamentos a partir do serviço.
+        /// </summary>
         private void ExecutarCarregarDados()
         {
             try
@@ -123,6 +155,11 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+
+        /// <summary>
+        /// Cria uma cópia profunda (clone) do alojamento selecionado para edição, 
+        /// garantindo que alterações canceladas não afetem a lista original.
+        /// </summary>
         private void PrepararEdicao()
         {
             if (AlojamentoSelecionado != null)
@@ -146,6 +183,10 @@ namespace POOfase1trabalho13_11.ViewModels
                 AlojamentoEmEdicao = new Alojamento();
             }
         }
+
+        /// <summary>
+        /// Valida se os campos obrigatórios do formulário estão preenchidos.
+        /// </summary>
         private bool PodeGravar()
         {
             return !string.IsNullOrWhiteSpace(AlojamentoEmEdicao?.Nome) &&
@@ -154,6 +195,9 @@ namespace POOfase1trabalho13_11.ViewModels
                    AlojamentoEmEdicao.PrecoPorNoite > 0;
         }
 
+        /// <summary>
+        /// Limpa o formulário e a seleção para permitir um novo registo.
+        /// </summary>
         private void ExecutarNovo()
         {
             
@@ -164,6 +208,9 @@ namespace POOfase1trabalho13_11.ViewModels
             (RemoverAlojamentoCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
         }
 
+        /// <summary>
+        /// Invoca o serviço para persistir as alterações do alojamento em edição.
+        /// </summary>
         private void ExecutarGravar()
         {
             if (AlojamentoEmEdicao == null || string.IsNullOrEmpty(AlojamentoEmEdicao.Nome))
@@ -196,7 +243,9 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
-
+        /// <summary>
+        /// Remove o alojamento selecionado após confirmação do utilizador.
+        /// </summary>
         private void ExecutarRemover()
         {
             if (AlojamentoSelecionado == null) return;
@@ -222,6 +271,9 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+        /// <summary>
+        /// Altera o estado operacional do alojamento (Ex: Manutenção, Disponível).
+        /// </summary>
         private void ExecutarMudarEstado(EstadoAlojamento novoEstado)
         {
             if (AlojamentoSelecionado == null) return;

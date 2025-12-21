@@ -1,4 +1,11 @@
-﻿using POOfase1trabalho13_11.Models.Entities;
+﻿//-----------------------------------------------------------------
+//    <copyright file="AlojamentoService.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 
 namespace POOfase1trabalho13_11.Models.Services.Interfaces

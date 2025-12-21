@@ -1,4 +1,11 @@
-﻿using POOfase1trabalho13_11.Models.Entities.Interfaces;
+﻿//-----------------------------------------------------------------
+//    <copyright file="JsonRepository.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities.Interfaces;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using System.IO;
 using System.Text.Json;
@@ -6,18 +13,31 @@ using System.Windows;
 
 namespace POOfase1trabalho13_11.Models.Repositories.Implementations 
 {
-    // Classe base que lida com a persistência genérica de JSON
-    
+
+    /// <summary>
+    /// Fornece uma implementação base genérica para repositórios que utilizam ficheiros JSON como suporte de dados.
+    /// Gere automaticamente o carregamento, gravação e operações CRUD em memória com sincronização em disco.
+    /// </summary>
+    /// <typeparam name="TEntity">O tipo da entidade, que deve implementar <see cref="IEntity"/>.</typeparam>
+
     public abstract class JsonRepository<TEntity> : IRepository<TEntity> where TEntity : class, IEntity
     {
         #region Fields
 
-        
+        /// <summary>
+        /// Caminho base para a pasta de dados da aplicação.
+        /// </summary>
         private readonly string _basePath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data"));
+
+        /// <summary>
+        /// Caminho completo para o ficheiro JSON específico desta entidade.
+        /// </summary>
         private readonly string _filePath; // Caminho completo para o arquivo JSON
 
-        // A lista de itens será armazenada em memória
-        
+
+        /// <summary>
+        /// Lista interna que mantém os itens em memória para acesso rápido.
+        /// </summary>        
         protected List<TEntity> Items { get; set; } = new List<TEntity>();
 
         #endregion
@@ -25,9 +45,9 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         #region Constructors
 
         /// <summary>
-        /// Inicializa o repositório JSON, garantindo que o arquivo exista e carregando os dados.
+        /// Inicializa uma nova instância do repositório genérico, garante a criação do diretório e carrega os dados existentes.
         /// </summary>
-        /// <param name="fileName">O nome do arquivo JSON (ex: "alojamentos.json").</param>
+        /// <param name="fileName">Nome do ficheiro (ex: "clientes.json").</param>
         public JsonRepository(string fileName)
         {
             _filePath = Path.Combine(_basePath, fileName);
@@ -36,15 +56,15 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
                 if (!Directory.Exists(_basePath))
                     Directory.CreateDirectory(_basePath);
 
-                // 2. Garantir que o arquivo exista e seja um array JSON vazio
+                // 2. Garantir que o ficheiro exista com uma estrutura JSON válida (Array vazio)
                 if (!File.Exists(_filePath))
             {
                 File.WriteAllText(_filePath, "[]");
             }
 
 
-            // Agora carregamos usando Streaming
-            LoadFromFileStreaming();
+                // Carrega os dados utilizando Streaming para melhor performance
+                LoadFromFileStreaming();
             }
             catch (Exception ex)
             {
@@ -58,6 +78,9 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 
         #region Persistence Methods (Internal)
 
+        /// <summary>
+        /// Lê o ficheiro JSON de forma eficiente utilizando Streams e desserializa para a lista em memória.
+        /// </summary>
         private void LoadFromFileStreaming()
         {
             try
@@ -68,8 +91,7 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
                     return;
                 }
 
-                // Se o ficheiro estiver vazio (0 bytes), o Deserialize falha. 
-                // Vamos garantir que tem pelo menos o conteúdo mínimo "[]"
+                // Verificação de integridade mínima do ficheiro
                 FileInfo info = new FileInfo(_filePath);
                 if (info.Length < 2)
                 {
@@ -84,13 +106,13 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 
                     Items = result ?? new List<TEntity>();
 
-                    // LOG PARA O OUTPUT DO VISUAL STUDIO
+                    
                     System.Diagnostics.Debug.WriteLine($">>> REPOSITÓRIO: Carregados {Items.Count} itens de {typeof(TEntity).Name}");
                 }
             }
             catch (JsonException jex)
             {
-                // Se chegar aqui, o ficheiro JSON está corrompido ou o formato mudou
+                
                 System.Diagnostics.Debug.WriteLine($"ERRO DE FORMATO JSON: {jex.Message}");
                 MessageBox.Show($"Erro de formato no ficheiro {Path.GetFileName(_filePath)}. O ficheiro pode estar corrompido.", "Erro de Dados");
                 Items = new List<TEntity>();
@@ -102,6 +124,11 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             }
         }
 
+
+        /// <summary>
+        /// Serializa a lista de itens e grava no disco de forma atómica utilizando um ficheiro temporário.
+        /// </summary>
+        /// <exception cref="IOException">Lançada se ocorrer um erro durante a escrita ou substituição do ficheiro.</exception>
         protected void SaveToFile()
         {
             string tempFile = _filePath + ".tmp";
@@ -111,9 +138,9 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
                     WriteIndented = true,
                     PropertyNameCaseInsensitive = true // Para garantir que o motor JSON encontre as propriedades 
                                                        // mesmo que o ficheiro antigo ainda tenha nomes diferentes
-                }; 
+                };
 
-                // 1. Gravamos via Stream num arquivo TEMPORÁRIO
+                // 1. Grava no ficheiro temporário para evitar corrupção em caso de quebra de crash
                 using (FileStream fs = File.Create(tempFile))
                 {
                     JsonSerializer.Serialize(fs, Items, options);
@@ -127,12 +154,14 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             {
                 if (File.Exists(tempFile)) File.Delete(tempFile);
                 throw new IOException($"Erro ao persistir dados em {_filePath}", ex);
-                // Limpeza: se falhou, tentamos apagar o lixo (arquivo temporário)
+                
                
             }
         }
 
-
+        /// <summary>
+        /// Guarda uma entidade, decidindo se deve adicionar uma nova ou atualizar uma existente com base no ID.
+        /// </summary>
         public virtual bool Save(TEntity entity)
         {
             if (entity == null) return false;
@@ -140,7 +169,7 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             // Se o ID for 0 ou menor, ou se o ID não for encontrado na nossa lista atual
             if (entity.Id <= 0 || GetById(entity.Id) == null)
             {
-                // Aqui ele chama o Add. 
+                // Chama o Add. 
                 // Se for um Alojamento, ele vai usar o seu 'override' que gera o ID automático!
                 Add(entity);
                 return true;
@@ -153,13 +182,17 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 
         #region Basic CRUD Methods
 
-        
+        /// <summary>
+        /// Devolve todos os itens do repositório como uma coleção apenas de leitura.
+        /// </summary>
         public virtual IEnumerable<TEntity> GetAll()
         {
             return Items.AsReadOnly(); // Retorna ReadOnly para proteger a lista interna
         }
 
-        // Adicionar um item e salvar
+        /// <summary>
+        /// Adiciona uma nova entidade à lista e sincroniza com o ficheiro.
+        /// </summary>
         public virtual void Add(TEntity entity)
         {
             
@@ -167,12 +200,17 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             SaveToFile();
         }
 
+        /// <summary>
+        /// Procura uma entidade pelo seu identificador único.
+        /// </summary>
         public virtual TEntity? GetById(int id)
         {
             return Items.FirstOrDefault(x => x.Id == id);
         }
 
-        //  Atualizar um item
+        /// <summary>
+        /// Atualiza os dados de uma entidade existente em memória e persiste no disco.
+        /// </summary>
         public virtual bool Update(TEntity entity)
         {
             if (entity == null) return false;
@@ -189,9 +227,12 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             return false;
         }
 
+        /// <summary>
+        /// Remove uma entidade do sistema através do seu ID e atualiza o ficheiro.
+        /// </summary>
         public virtual bool Remove(int id)
         {
-            // Remove todos os itens que tenham o ID correspondente
+            
             int removedCount = Items.RemoveAll(x => x.Id == id);
 
             if (removedCount > 0)

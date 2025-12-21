@@ -1,4 +1,11 @@
-﻿using System;
+﻿//-----------------------------------------------------------------
+//    <copyright file="ViewType.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

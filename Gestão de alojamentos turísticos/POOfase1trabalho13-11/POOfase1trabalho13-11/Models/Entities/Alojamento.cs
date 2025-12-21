@@ -1,4 +1,12 @@
-﻿using POOfase1trabalho13_11.Models.Entities.Interfaces;
+﻿//-----------------------------------------------------------------
+//    <copyright file="Alojamento.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+
+using POOfase1trabalho13_11.Models.Entities.Interfaces;
 using POOfase1trabalho13_11.Models.Enums;
 using System.Text.Json.Serialization;
 
@@ -6,8 +14,9 @@ namespace POOfase1trabalho13_11.Models.Entities
 {
     /// <summary>
     /// Representa um alojamento turístico contendo detalhes como localização, tipo, preço e comodidades.
+    /// Implementa a interface <see cref="IEntity"/>.
     /// </summary>
-   
+
     public class Alojamento : IEntity
     {
         #region Private Fields
@@ -24,6 +33,10 @@ namespace POOfase1trabalho13_11.Models.Entities
 
         #region Public Properties
 
+        /// <summary>
+        /// Obtém ou define o identificador único do alojamento.
+        /// </summary>
+        /// <exception cref="ArgumentException">Lançada se o ID for negativo.</exception>
         public int Id
         {
             get => _id;
@@ -35,6 +48,9 @@ namespace POOfase1trabalho13_11.Models.Entities
             }
         }
 
+        /// <summary>
+        /// Obtém ou define o nome do alojamento.
+        /// </summary>
         public string Nome
         {
             get => _nome;
@@ -45,7 +61,9 @@ namespace POOfase1trabalho13_11.Models.Entities
         }
 
 
-
+        /// <summary>
+        /// Obtém ou define a localização do alojamento.
+        /// </summary>
         public string Localizacao
         {
             get => _localizacao;
@@ -58,13 +76,18 @@ namespace POOfase1trabalho13_11.Models.Entities
         }
 
 
-
+        /// <summary>
+        /// Obtém ou define o preço cobrado por cada noite de estadia.
+        /// </summary>
         public decimal PrecoPorNoite
         {
             get => _precoPorNoite;
             set => _precoPorNoite = value; 
         }
 
+        /// <summary>
+        /// Obtém ou define a capacidade máxima de hóspedes do alojamento.
+        /// </summary>
         public int Capacidade
         {
             get => _capacidade;
@@ -74,6 +97,10 @@ namespace POOfase1trabalho13_11.Models.Entities
                 _capacidade = value;
             }
         }
+
+        /// <summary>
+        /// Obtém ou define a descrição detalhada do alojamento.
+        /// </summary>
         public string Descricao
         {
             get => _descricao;
@@ -90,12 +117,19 @@ namespace POOfase1trabalho13_11.Models.Entities
             set => _comodidades = value != null ? new List<string>(value) : new List<string>();
         }
 
+
+        /// <summary>
+        /// Obtém ou define o estado atual de disponibilidade do alojamento.
+        /// </summary>
         public EstadoAlojamento Estado
         {
             get => _estado;
             set => _estado = value;
         }
 
+        /// <summary>
+        /// Obtém ou define o tipo de alojamento (ex: Quarto, Apartamento).
+        /// </summary>
         public TipoAlojamento Tipo
         {
             get => _tipo;
@@ -105,6 +139,11 @@ namespace POOfase1trabalho13_11.Models.Entities
         #endregion
 
         #region Constructors
+
+        /// <summary>
+        /// Inicializa uma nova instância da classe <see cref="Alojamento"/> com parâmetros.
+        /// Utilizado principalmente pela desserialização JSON.
+        /// </summary>
         // O atributo faz com que o JSON use este construtor para recriar o objeto do ficheiro
         [JsonConstructor]
         public Alojamento(
@@ -130,7 +169,9 @@ namespace POOfase1trabalho13_11.Models.Entities
             Estado = estado;
         }
 
-
+        /// <summary>
+        /// Inicializa uma nova instância da classe <see cref="Alojamento"/> com valores por defeito.
+        /// </summary>
         public Alojamento()
         {
             _comodidades = new List<string>();

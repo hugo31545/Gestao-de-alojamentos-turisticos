@@ -1,4 +1,11 @@
-﻿using System;
+﻿//-----------------------------------------------------------------
+//    <copyright file="ClienteViewModel.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
@@ -9,6 +16,10 @@ using POOfase1trabalho13_11.ViewModels.Commands;
 
 namespace POOfase1trabalho13_11.ViewModels
 {
+    /// <summary>
+    /// ViewModel responsável pela gestão da interface de Clientes.
+    /// Coordena o fluxo de registo, alteração e remoção de clientes, garantindo a integridade dos dados na UI.
+    /// </summary>
     public class ClienteViewModel : BaseViewModel
     {
         #region Fields
@@ -19,14 +30,19 @@ namespace POOfase1trabalho13_11.ViewModels
         #endregion
 
         #region Properties
+        /// <summary>
+        /// Coleção de clientes para exibição na View.
+        /// </summary>
         public ObservableCollection<Cliente> ListaClientes
         {
             get => _listaClientes;
             set { _listaClientes = value; OnPropertyChanged(nameof(ListaClientes)); }
         }
 
-        
 
+        /// <summary>
+        /// Instância do cliente que está a ser manipulada no formulário de entrada.
+        /// </summary>
         public Cliente ClienteEmEdicao
         {
             get => _clienteEmEdicao;
@@ -39,6 +55,10 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+
+        /// <summary>
+        /// Cliente selecionado na listagem. Ao ser alterado, despoleta a preparação da edição.
+        /// </summary>
         public Cliente? ClienteSelecionado
         {
             get => _clienteSelecionado;
@@ -62,6 +82,10 @@ namespace POOfase1trabalho13_11.ViewModels
         #endregion
 
         #region Constructor
+
+        /// <summary>
+        /// Inicializa a ViewModel injetando o serviço de clientes.
+        /// </summary>
         public ClienteViewModel(IClienteService clienteService)
         {
             _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
@@ -78,6 +102,10 @@ namespace POOfase1trabalho13_11.ViewModels
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Atualiza a coleção de clientes a partir da base de dados/ficheiro.
+        /// </summary>
         private void CarregarDados()
         {
            
@@ -85,6 +113,10 @@ namespace POOfase1trabalho13_11.ViewModels
             ListaClientes = new ObservableCollection<Cliente>(clientes);
         }
 
+
+        /// <summary>
+        /// Prepara uma cópia de segurança para edição, evitando que edições não guardadas reflitam na lista.
+        /// </summary>
         private void PrepararEdicao()
         {
             if (ClienteSelecionado != null)
@@ -106,6 +138,10 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+
+        /// <summary>
+        /// Validação básica de UI para habilitar o botão Gravar.
+        /// </summary>
         private bool PodeGravar()
         {
            
@@ -116,6 +152,10 @@ namespace POOfase1trabalho13_11.ViewModels
                    ClienteEmEdicao.Nif.Length >= 9;
         }
 
+
+        /// <summary>
+        /// Limpa o estado de seleção e prepara o formulário para um novo registo.
+        /// </summary>
         private void ExecutarNovo()
         {
             _clienteSelecionado = null; 
@@ -124,6 +164,10 @@ namespace POOfase1trabalho13_11.ViewModels
             (RemoverCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
         }
 
+
+        /// <summary>
+        /// Tenta persistir os dados do cliente, decidindo entre novo registo ou atualização.
+        /// </summary>
         private void ExecutarGravar()
         {
             try
@@ -157,6 +201,10 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+
+        /// <summary>
+        /// Remove o cliente selecionado após confirmação explícita do utilizador.
+        /// </summary>
         private void ExecutarRemover()
         {
             if (ClienteSelecionado == null) return;

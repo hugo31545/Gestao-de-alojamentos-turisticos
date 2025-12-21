@@ -1,4 +1,11 @@
-﻿using POOfase1trabalho13_11.Models.Entities;
+﻿//-----------------------------------------------------------------
+//    <copyright file="AlojamentoService.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
@@ -7,15 +14,22 @@ using POOfase1trabalho13_11.Exceptions;
 namespace POOfase1trabalho13_11.Models.Services.Implementations
 {
 
-    
+    /// <summary>
+    /// Implementa a lógica de negócio para a gestão de alojamentos.
+    /// Orquestra a interação entre múltiplos repositórios e valida regras de integridade.
+    /// </summary>
     public class AlojamentoService : IAlojamentoService
     {
-        
+        #region Fields
         private readonly IAlojamentoRepository _alojamentoRepository;
         private readonly IRegistoRepository _registoRepository;
         private readonly IReservaRepository _reservaRepository;
-        
+        #endregion
 
+        #region Constructors
+        /// <summary>
+        /// Inicializa uma nova instância do serviço através de Injeção de Dependências.
+        /// </summary>
         public AlojamentoService(
             IAlojamentoRepository alojamentoRepository,
             IRegistoRepository registoRepository,
@@ -26,15 +40,23 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             _reservaRepository = reservaRepository;
         }
 
-        #region Gestão de Alojamentos (CRUD)
+        #endregion
 
+        #region Gestão de Alojamentos (CRUD)
+        /// <summary>
+        /// Lista todos os alojamentos registados no sistema.
+        /// </summary>
         public IEnumerable<Alojamento> ObterTodosAlojamentos() => _alojamentoRepository.GetAll();
 
+        /// <summary>
+        /// Procura um alojamento pelo seu identificador.
+        /// </summary>
         public Alojamento? ObterAlojamentoPorId(int id) => _alojamentoRepository.GetById(id);
 
         /// <summary>
-        /// Grava um alojamento (Cria novo ou atualiza existente) com validações automáticas.
+        /// Guarda ou atualiza um alojamento, validando a unicidade do nome e a validade do preço.
         /// </summary>
+        /// <exception cref="BusinessException">Lançada quando o nome já existe ou o preço é inválido.</exception>
         public bool GuardarAlojamento(Alojamento alojamento)
         {
             if (alojamento == null) throw new BusinessException("Os dados do alojamento são inválidos."); ;
@@ -46,7 +68,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                 // Nome já ocupado por OUTRO alojamento
                 throw new BusinessException($"Já existe um alojamento com o nome '{alojamento.Nome}'.");
             }
-
+            // Validação de Preço
             if (alojamento.PrecoPorNoite <= 0)
                 throw new BusinessException("O preço por noite deve ser superior a zero.");
 
@@ -64,6 +86,11 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             return sucesso;
         }
 
+
+        /// <summary>
+        /// Remove um alojamento se este não possuir reservas confirmadas pendentes.
+        /// </summary>
+        /// <exception cref="BusinessException">Lançada se existirem reservas ativas para o alojamento.</exception>
         public bool RemoverAlojamento(int id)
         {
            
@@ -85,6 +112,10 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
 
         #region Lógica de Negócio e Estados
 
+
+        /// <summary>
+        /// Altera o estado de um alojamento (ex: de Disponível para Manutenção) e gera um log.
+        /// </summary>
         public bool MudarEstado(int idAlojamento, EstadoAlojamento novoEstado)
         {
             var alojamento = _alojamentoRepository.GetById(idAlojamento);
@@ -103,6 +134,10 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             return false;
         }
 
+
+        /// <summary>
+        /// Calcula o valor total com base no preço por noite do alojamento.
+        /// </summary>
         public decimal CalcularPrecoTotal(int alojamentoId, int numeroNoites)
         {
             if (numeroNoites <= 0) return 0;
@@ -114,11 +149,20 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
 
         #endregion
 
-        #region Pesquisa e Disponibilidade (Excelência em Performance)
+        #region Pesquisa e Disponibilidade 
 
+
+        /// <summary>
+        /// Retorna todos os alojamentos marcados como disponíveis.
+        /// </summary>
         public IEnumerable<Alojamento> BuscarAlojamentosDisponiveis() =>
             _alojamentoRepository.BuscarDisponiveis();
 
+
+
+        /// <summary>
+        /// Verifica a disponibilidade real cruzando dados de alojamentos e reservas existentes num período.
+        /// </summary>
         public IEnumerable<Alojamento> BuscarDisponiveisPorPeriodo(DateTime checkIn, DateTime checkOut)
         {
             if (checkIn >= checkOut) return Enumerable.Empty<Alojamento>();
@@ -135,6 +179,11 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             );
         }
 
+
+        /// <summary>
+        /// Procura o melhor alojamento disponível com base na capacidade, tipo e preço.
+        /// </summary>
+
         public Alojamento? EncontrarMelhorOpcao(int capacidade, TipoAlojamento tipo, DateTime checkIn, DateTime checkOut)
         {
             var candidatos = BuscarDisponiveisPorPeriodo(checkIn, checkOut)
@@ -149,11 +198,19 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         #endregion
 
         #region  Helpers
+
+        /// <summary>
+        /// Método auxiliar para gerar logs de auditoria no sistema.
+        /// </summary>
         private void GerarRegisto(string entidade, string acao, string detalhe, int refId)
         {
             _registoRepository.Add(new Registo(0, entidade, detalhe, "Sistema", acao, refId, DateTime.Now));
         }
 
+
+        /// <summary>
+        /// Filtra alojamentos por tipo.
+        /// </summary>
         public IEnumerable<Alojamento> FiltrarPorTipo(TipoAlojamento tipo) => _alojamentoRepository.FiltrarPorTipo(tipo);
         #endregion
     } 

@@ -1,4 +1,11 @@
-﻿using POOfase1trabalho13_11.Models.Entities;
+﻿//-----------------------------------------------------------------
+//    <copyright file="ReservaViewModel.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using System.Collections.ObjectModel;
@@ -8,6 +15,11 @@ using POOfase1trabalho13_11.ViewModels.Commands;
 
 namespace POOfase1trabalho13_11.ViewModels
 {
+
+    /// <summary>
+    /// ViewModel responsável pela gestão de reservas, incluindo a lógica de disponibilidade,
+    /// registo de estadias (Check-In/Out) e cancelamentos.
+    /// </summary>
     public class ReservaViewModel : BaseViewModel
     {
         #region Services
@@ -31,7 +43,7 @@ namespace POOfase1trabalho13_11.ViewModels
         #endregion
 
         #region Public Properties
-
+        // Listas observáveis que alimentam as ComboBoxes e DataGrids na View
         public ObservableCollection<Reserva> ListaReservas { get; set; } = new();
         public ObservableCollection<Cliente> ListaClientes { get; set; } = new();
         public ObservableCollection<Alojamento> ListaAlojamentosDisponiveis { get; set; } = new();
@@ -114,7 +126,7 @@ namespace POOfase1trabalho13_11.ViewModels
                 _reservaSelecionada = value;
                 OnPropertyChanged(nameof(ReservaSelecionada));
 
-                // Notificar todos os comandos que dependem da seleção
+                // Reavalia comandos de estado sempre que uma reserva é selecionada na lista
                 (CancelarReservaCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
                 (CheckInCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
                 (CheckOutCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
@@ -156,7 +168,7 @@ namespace POOfase1trabalho13_11.ViewModels
         #region Helper Methods
 
         /// <summary>
-        /// Atualiza a lista de alojamentos filtrando apenas os que estão livres no período selecionado.
+        /// Filtra alojamentos que não possuem conflitos de datas para o período selecionado.
         /// </summary>
         private void AtualizarAlojamentosDisponiveis()
         {

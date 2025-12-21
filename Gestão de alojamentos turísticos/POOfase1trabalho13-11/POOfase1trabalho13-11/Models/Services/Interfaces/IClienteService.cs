@@ -1,4 +1,11 @@
-﻿using System.Collections.Generic;
+﻿//-----------------------------------------------------------------
+//    <copyright file="IClienteService.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>1</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using System.Collections.Generic;
 using POOfase1trabalho13_11.Models.Entities;
 
 namespace POOfase1trabalho13_11.Models.Services.Interfaces
@@ -8,6 +15,7 @@ namespace POOfase1trabalho13_11.Models.Services.Interfaces
     /// </summary>
     public interface IClienteService
     {
+        #region Read Operations
         /// <summary>
         /// Obtém a lista completa de clientes registados.
         /// </summary>
@@ -46,5 +54,6 @@ namespace POOfase1trabalho13_11.Models.Services.Interfaces
         /// <param name="mensagem">Mensagem de feedback.</param>
         /// <returns>True se a remoção foi concluída.</returns>
         bool RemoverCliente(int id, out string mensagem);
+        #endregion
     }
 }

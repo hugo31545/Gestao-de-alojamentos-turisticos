@@ -1,4 +1,11 @@
-﻿using POOfase1trabalho13_11.Models.Entities;
+﻿//-----------------------------------------------------------------
+//    <copyright file="RegistryViewModel.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using POOfase1trabalho13_11.ViewModels.Commands;
 using POOfase1trabalho13_11.Views.Enums;
@@ -10,6 +17,11 @@ using System.Windows.Input;
 
 namespace POOfase1trabalho13_11.ViewModels
 {
+
+    /// <summary>
+    /// ViewModel responsável pelo processo de auto-registo de novos funcionários no sistema.
+    /// Coordena a criação simultânea de credenciais de acesso e perfil de funcionário.
+    /// </summary>
     public class RegistryViewModel : BaseViewModel
     {
         #region Fields
@@ -27,6 +39,7 @@ namespace POOfase1trabalho13_11.ViewModels
         #endregion
 
         #region Properties
+        // Cada propriedade notifica a UI e reavalia a validade do comando de registo
         public string Nome
         {
             get => _nome;
@@ -51,6 +64,9 @@ namespace POOfase1trabalho13_11.ViewModels
             set { _cargo = value; OnPropertyChanged(nameof(Cargo)); NotificarComandos(); }
         }
 
+        /// <summary>
+        /// Mensagem de erro ou sucesso exibida na zona de estado da janela de registo.
+        /// </summary>
         public string MensagemFeedback
         {
             get => _mensagemFeedback;
@@ -74,6 +90,10 @@ namespace POOfase1trabalho13_11.ViewModels
         public ICommand RegistarCommand { get; }
         public ICommand LimparCamposCommand { get; }
         #endregion
+
+        /// <summary>
+        /// Ação para fechar a janela de registo após sucesso ou cancelamento.
+        /// </summary>
         public Action? CloseWindowAction { get; set; }
 
 
@@ -92,6 +112,11 @@ namespace POOfase1trabalho13_11.ViewModels
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Validação em tempo real (CanExecute). 
+        /// Garante que os campos mínimos estão preenchidos e as passwords coincidem.
+        /// </summary>
         private bool PodeRegistar()
         {
             return !string.IsNullOrWhiteSpace(Nome) &&
@@ -106,6 +131,11 @@ namespace POOfase1trabalho13_11.ViewModels
         {
             (RegistarCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
         }
+
+
+        /// <summary>
+        /// Lógica principal de registo. Tenta criar o utilizador e, em seguida, o funcionário.
+        /// </summary>
         private void ExecutarRegisto()
         {
             try
@@ -161,6 +191,9 @@ namespace POOfase1trabalho13_11.ViewModels
             }
         }
 
+        /// <summary>
+        /// Reseta todos os campos do formulário para o estado inicial.
+        /// </summary>
         private void LimparCampos()
         {
             _nome = string.Empty;

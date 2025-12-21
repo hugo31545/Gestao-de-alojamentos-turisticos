@@ -1,28 +1,77 @@
-﻿using System;
+﻿//-----------------------------------------------------------------
+//    <copyright file="EmployeeService.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using System;
 using System.Collections.Generic;
-using System.Linq; // <-- ADICIONAR ESTE PARA O FIRSTORDEFAULT FUNCIONAR
+using System.Linq; 
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 
 namespace POOfase1trabalho13_11.Models.Services.Implementations
 {
+
+    /// <summary>
+    /// Implementa a lógica de negócio para a gestão de funcionários (Employees).
+    /// Centraliza validações de NIF, gestão de cargos e auditoria de alterações.
+    /// </summary>
     public class EmployeeService : IEmployeeService
     {
+
+
+        #region Fields
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IRegistoRepository _registoRepository;
 
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Inicializa o serviço injetando as dependências de persistência e auditoria.
+        /// </summary>
         public EmployeeService(IEmployeeRepository employeeRepository, IRegistoRepository registoRepository)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _registoRepository = registoRepository ?? throw new ArgumentNullException(nameof(registoRepository));
         }
+
+        #endregion
+
+        #region Read Operations
+
+
+        /// <summary>
+        /// Verifica se um NIF já se encontra atribuído a algum funcionário no sistema.
+        /// </summary>
         public bool VerificarNifDuplicado(string nif)
         {
             return _employeeRepository.GetAll().Any(e => e.NIF == nif);
         }
-        #region Read Operations
 
+
+        /// <summary>
+        /// Obtém a listagem completa de funcionários.
+        /// </summary>
+        public IEnumerable<Employee> ObterTodos() => _employeeRepository.GetAll();
+
+
+        /// <summary>
+        /// Procura um funcionário específico pelo seu identificador.
+        /// </summary>
+        public Employee? ObterPorId(int id) => _employeeRepository.GetById(id);
+
+        #endregion
+
+        #region Write Operations
+
+        /// <summary>
+        /// Atalho para criação rápida de um funcionário a partir de dados básicos.
+        /// </summary>
         public bool AdicionarFuncionario(string nome, string email, string nif, string cargo)
         {
             var novoFuncionario = new Employee
@@ -36,20 +85,16 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
 
             string msg;
             bool resultado = GuardarFuncionario(novoFuncionario, out msg);
-            // Poderia registar a 'msg' em logs de sistema aqui se resultado for false
+            
             return resultado;
         }
 
-        public IEnumerable<Employee> ObterTodos() => _employeeRepository.GetAll();
-
-        public Employee? ObterPorId(int id) => _employeeRepository.GetById(id);
-
-        #endregion
-
-        #region Write Operations
         /// <summary>
-        /// Regista um novo funcionário ou atualiza um existente com validações de integridade.
+        /// Regista ou atualiza um funcionário, garantindo que o NIF é exclusivo.
         /// </summary>
+        /// <param name="funcionario">Objeto funcionário a persistir.</param>
+        /// <param name="mensagem">Mensagem de feedback sobre a operação.</param>
+        /// <returns>True se a operação foi bem-sucedida.</returns>
         public bool GuardarFuncionario(Employee funcionario, out string mensagem)
         {
             try
@@ -60,7 +105,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                     return false;
                 }
 
-                // Validação de NIF único (excluindo o próprio ID caso seja update)
+                // Validação de NIF único (Ignora o próprio registo em caso de UPDATE)
                 var existenteNif = _employeeRepository.GetAll()
                     .FirstOrDefault(e => e.NIF == funcionario.NIF && e.Id != funcionario.Id);
 
@@ -101,7 +146,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         }
 
         /// <summary>
-        /// Remove um funcionário e regista a ação na auditoria.
+        /// Remove um funcionário do sistema após validação de existência.
         /// </summary>
         public bool RemoverFuncionario(int id, out string mensagem)
         {
@@ -128,7 +173,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         }
 
         /// <summary>
-        /// Atualiza os dados de um funcionário existente.
+        /// Atualiza os dados de um funcionário que já existe na base de dados.
         /// </summary>
         public bool AtualizarDados(Employee employee, out string mensagem)
         {

@@ -1,4 +1,11 @@
-﻿using POOfase1trabalho13_11.Models.Entities;
+﻿//-----------------------------------------------------------------
+//    <copyright file="RegistoService.cs" company="IPCA">
+//     Copyright IPCA-EST. All rights reserved.
+//    </copyright>
+//    <version>2</version>
+//    <author>Hugo Gomes</author>
+//-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using System;
@@ -7,26 +14,56 @@ using System.Linq;
 
 namespace POOfase1trabalho13_11.Models.Services.Implementations
 {
+
+    /// <summary>
+    /// Implementa a lógica de gestão e consulta do histórico de auditoria (Logs).
+    /// Permite a filtragem de eventos por entidade, operação e manutenção preventiva dos dados.
+    /// </summary>
     public class RegistoService : IRegistoService
     {
-        private readonly IRegistoRepository _registoRepo;
 
+        #region Fields
+        private readonly IRegistoRepository _registoRepo;
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Inicializa o serviço de registos injetando o repositório de persistência.
+        /// </summary>
         public RegistoService(IRegistoRepository registoRepo)
         {
             _registoRepo = registoRepo;
         }
+        #endregion
 
+
+        #region Public Methods
+
+        /// <summary>
+        /// Obtém todos os registos de auditoria ordenados do mais recente para o mais antigo.
+        /// </summary>
         public IEnumerable<Registo> ObterTodosLogs()
         {
             return _registoRepo.GetAll().OrderByDescending(r => r.DataRegisto);
         }
 
+
+        /// <summary>
+        /// Filtra o histórico de ações realizadas sobre uma instância específica de uma entidade.
+        /// </summary>
+        /// <param name="tipoEntidade">Nome da classe (ex: "Alojamento", "Cliente").</param>
+        /// <param name="entidadeId">ID do registo específico.</param>
         public IEnumerable<Registo> ObterLogsPorEntidade(string tipoEntidade, int entidadeId)
         {
             return _registoRepo.GetByEntidade(tipoEntidade, entidadeId)
                                .OrderByDescending(r => r.DataRegisto);
         }
 
+
+        /// <summary>
+        /// Filtra o histórico por tipo de operação (CREATE, UPDATE, DELETE, etc).
+        /// </summary>
         public IEnumerable<Registo> ObterLogsPorOperacao(string operacao)
         {
             return _registoRepo.GetAll()
@@ -34,6 +71,11 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                                .OrderByDescending(r => r.DataRegisto);
         }
 
+
+        /// <summary>
+        /// Obtém uma lista reduzida contendo apenas os últimos eventos do sistema.
+        /// </summary>
+        /// <param name="quantidade">Número de registos a retornar.</param>
         public IEnumerable<Registo> ObterLogsRecentes(int quantidade)
         {
             return _registoRepo.GetAll()
@@ -42,8 +84,11 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         }
 
         /// <summary>
-        /// Mantém o ficheiro JSON saudável removendo registos muito antigos.
+        /// Realiza a manutenção do suporte de armazenamento, eliminando registos anteriores a uma determinada data.
         /// </summary>
+        /// <param name="dataCorte">Data limite; registos mais antigos que esta data serão removidos.</param>
+        /// <param name="mensagem">Feedback sobre o resultado da operação.</param>
+        /// <returns>True se a limpeza foi processada; False em caso de erro técnico.</returns>
         public bool LimparLogsAntigos(DateTime dataCorte, out string mensagem)
         {
             try
@@ -67,5 +112,6 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                 return false;
             }
         }
+        #endregion
     }
 }
