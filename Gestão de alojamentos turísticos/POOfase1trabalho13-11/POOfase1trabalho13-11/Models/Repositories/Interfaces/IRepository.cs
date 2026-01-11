@@ -17,7 +17,7 @@ namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
     public interface IRepository<T> where T : class
     {
 
-        #endregion
+        
         /// <summary>
         /// Adiciona uma nova instância da entidade ao suporte de dados.
         /// </summary>
@@ -62,6 +62,6 @@ namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
         /// <param name="entity">O objeto a guardar.</param>
         /// <returns><c>true</c> se a operação de persistência for bem-sucedida.</returns>
         bool Save(T entity);
-           #endregion
+           
     }
 }
