@@ -1,0 +1,29 @@
+name: CI/CD POO Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do codigo
+      uses: actions/checkout@v4
+
+    - name: Configurar .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0 
+
+    - name: Restaurar dependencias
+      run: dotnet restore "Gestão de alojamentos turísticos/POOfase1trabalho13-11/POOfase1trabalho13-11.sln"
+
+    - name: Compilar o Projeto (Build)
+      run: dotnet build "Gestão de alojamentos turísticos/POOfase1trabalho13-11/POOfase1trabalho13-11.sln" --no-restore --configuration Release
+
+    - name: Executar Testes Unitarios
+      run: dotnet test "Gestão de alojamentos turísticos/POOfase1trabalho13-11/POOfase1trabalho13-11.sln" --no-build --verbosity normal --configuration Release
