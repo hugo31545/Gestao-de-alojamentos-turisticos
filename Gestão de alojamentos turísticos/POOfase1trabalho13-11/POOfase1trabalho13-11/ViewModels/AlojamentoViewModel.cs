@@ -39,25 +39,25 @@ namespace POOfase1trabalho13_11.ViewModels
         /// <summary>
         /// Coleção de alojamentos ligada à DataGrid ou ListView da View.
         /// </summary>
-        public ObservableCollection<Alojamento> ListaAlojamentos
+        public ObservableCollection<Alojamento> ListaAlojamentos //observableCollection para notificar a UI sobre alterações na lista
         {
             get => _listaAlojamentos;
-            set { _listaAlojamentos = value; OnPropertyChanged(nameof(ListaAlojamentos)); }
+            set { _listaAlojamentos = value; OnPropertyChanged(nameof(ListaAlojamentos)); } // Notifica a UI sobre alterações na lista
         }
 
         /// <summary>
         /// Obtém ou define o alojamento selecionado na lista. 
         /// Ao ser alterado, prepara uma cópia para edição.
         /// </summary>
-        public Alojamento? AlojamentoSelecionado
+        public Alojamento? AlojamentoSelecionado // Pode ser nulo se nada estiver selecionado
         {
             get => _alojamentoSelecionado;
             set
             {
-                if (SetProperty(ref _alojamentoSelecionado, value))
+                if (SetProperty(ref _alojamentoSelecionado, value)) // Usa SetProperty para notificar a UI
                 {
                     PrepararEdicao();
-                    (RemoverAlojamentoCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
+                    (RemoverAlojamentoCommand as ViewModelCommand)?.RaiseCanExecuteChanged(); // Atualiza o estado do comando de remoção
                 }
             }
         }
@@ -70,8 +70,8 @@ namespace POOfase1trabalho13_11.ViewModels
             get => _alojamentoEmEdicao;
             set
             {
-                _alojamentoEmEdicao = value;
-                OnPropertyChanged(nameof(AlojamentoEmEdicao));
+                _alojamentoEmEdicao = value; // Define o alojamento em edição
+                OnPropertyChanged(nameof(AlojamentoEmEdicao)); // Notifica a UI sobre alterações no alojamento em edição
                 (AdicionarAlojamentoCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
             }
         }

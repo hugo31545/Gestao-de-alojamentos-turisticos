@@ -74,8 +74,8 @@ namespace POOfase1trabalho13_11.ViewModels.Commands
         /// </summary>
         public event EventHandler? CanExecuteChanged
         {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
+            add => CommandManager.RequerySuggested += value; // faz a subscrição do evento
+            remove => CommandManager.RequerySuggested -= value; // remove a subscrição do evento
         }
         #endregion
     }
