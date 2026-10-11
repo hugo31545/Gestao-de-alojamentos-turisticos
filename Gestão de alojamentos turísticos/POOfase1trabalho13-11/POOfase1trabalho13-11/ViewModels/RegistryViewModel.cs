@@ -129,7 +129,7 @@ namespace POOfase1trabalho13_11.ViewModels
 
         private void NotificarComandos()
         {
-            (RegistarCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
+            (RegistarCommand as ViewModelCommand)?.RaiseCanExecuteChanged();// Notifica o comando para reavaliar CanExecute
         }
 
 
