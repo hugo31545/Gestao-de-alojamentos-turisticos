@@ -3,7 +3,7 @@
 [![CI](https://github.com/hugo31545/Gestao-de-alojamentos-turisticos/actions/workflows/main.yml/badge.svg)](https://github.com/hugo31545/Gestao-de-alojamentos-turisticos/actions/workflows/main.yml)
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)
 ![WPF](https://img.shields.io/badge/UI-WPF-0078D4)
-![Tests](https://img.shields.io/badge/tests-178%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-188%20passing-brightgreen)
 
 A **Windows desktop application (C# / .NET 8 / WPF)** for running a small hotel or holiday-rental business: guests, properties, bookings, check-in/check-out, reports and a full audit trail, in one place.
 
@@ -18,7 +18,8 @@ It started as the coursework project for *Object-Oriented Programming* (BSc in I
 - **Booking workflow as a state machine:** `Pending → Confirmed → Checked-in → Completed` (or `Cancelled`), with transitions validated by the booking entity's own methods and buttons enabled only when the action is allowed.
 - **Data safety:** atomic JSON writes (temporary file + replace), automatic copy of any unreadable data file, and in-memory rollback when a write fails.
 - **Audit trail:** every critical operation is recorded with the user who performed it.
-- **178 automated tests** (unit, integration with real files, ViewModel and XAML-loading tests), executed on every push by **GitHub Actions**.
+- **188 automated tests** (unit, integration with real files, ViewModel and XAML-loading tests), executed on every push by **GitHub Actions**.
+- **Forms that guide the user:** placeholders, field-by-field validation as you type (e.g. *"NIF must have 9 digits (has 5)"*) and an explanation when the submit button is disabled.
 - **Zero compiler warnings**, nullable reference types enabled.
 
 ## Features
@@ -56,7 +57,7 @@ View (XAML)  ⇄  ViewModel  ──▶  Service (business rules)  ──▶  Rep
 
 **Domain model:** `Alojamento` (property), `Cliente` (guest), `Employee`, `User`, `Reserva` (booking), `CheckIn`, `Registo` (audit entry) and `Consulta` (report history entry).
 
-**Patterns and techniques:** Repository (generic `JsonRepository<T>` plus specific repositories), Command, Factory (`ViewFactory`), Dependency Injection (`Microsoft.Extensions.DependencyInjection`), interface-based design, custom `BusinessException`, LINQ, `ObservableCollection`, and attached properties (a `PasswordBox` binding helper).
+**Patterns and techniques:** Repository (generic `JsonRepository<T>` plus specific repositories), Command, Factory (`ViewFactory`), Dependency Injection (`Microsoft.Extensions.DependencyInjection`), interface-based design, custom `BusinessException`, LINQ, `ObservableCollection`, and a reusable `FormField` user control (label, placeholder, password mode and inline validation message) built with dependency properties.
 
 **OOP concepts demonstrated:** inheritance (generic repository base class with eight subclasses; `BaseViewModel`), polymorphism (interface-based services, overridable repository methods), abstraction (an interface for every service and repository) and encapsulation (validated properties and domain methods that guard state changes).
 
@@ -84,6 +85,7 @@ After the first version worked, I reviewed the whole codebase and fixed what I f
 | Registering a staff member could leave a login account with no employee record | Validate everything first, and roll back the account if the second step fails. |
 | A corrupted JSON file was silently replaced by an empty one on the next save | Copy the damaged file aside, warn the user, and continue. |
 | The log-cleanup feature always failed against the real repository (it passed only because the test mocked it) | Added an explicit retention operation and an integration test with the real repository. |
+| Login and registration screens gave no feedback: wrong credentials showed nothing, and the form never said what was wrong | Reusable `FormField` control with placeholders and live per-field validation; login error message, Enter to submit, initial focus. |
 | Business rules too loose: bookings in the past, zero guests, deleting properties/guests with active bookings, bad NIF or email | Validation in the service layer, shared validator, tests for each rule. |
 | `MessageBox` calls inside ViewModels and a WPF dependency inside the data layer | `IDialogService`; the repository reports problems through an event instead of opening windows. |
 | Audit log always said "System" | `ISessionService` records the real user. |
@@ -113,7 +115,7 @@ dotnet test "Gestão de alojamentos turísticos/POOfase1trabalho13-11/POOfase1tr
 
 - **Unit tests:** services and entities, with repositories mocked using Moq.
 - **Integration tests:** real repositories writing to a temporary folder, including the full flow *booking → confirm → check-in → check-out → revenue*, and recovery from a corrupted file.
-- **ViewModel and UI tests:** commands enabled per booking state, correct use of the session and dialog services, and a test that loads the reports view's XAML on an STA thread.
+- **ViewModel and UI tests:** commands enabled per booking state, live form validation, correct use of the session and dialog services, and tests that load the login, registration and reports XAML on an STA thread.
 
 [GitHub Actions](.github/workflows/main.yml) restores, builds (Release) and tests the solution on every push and pull request to `main` and `develop`. Work is done on `develop` and merged to `main` through a pull request once CI is green.
 

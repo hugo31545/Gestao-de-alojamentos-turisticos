@@ -6,7 +6,9 @@
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
 using POOfase1trabalho13_11.ViewModels.Services;
+using POO.Utils.Security;
 using POOfase1trabalho13_11.Models.Entities;
+using POOfase1trabalho13_11.Models.Validation;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using POOfase1trabalho13_11.ViewModels.Commands;
 using POOfase1trabalho13_11.Views.Enums;
@@ -86,11 +88,46 @@ namespace POOfase1trabalho13_11.ViewModels
             get => _passwordConfirmacao;
             set { _passwordConfirmacao = value; OnPropertyChanged(nameof(PasswordConfirmacao)); NotificarComandos(); }
         }
+
+        // Validação em tempo real. Um campo vazio não mostra erro (mostra o placeholder);
+        // o erro aparece assim que o utilizador escreve algo inválido.
+        public string NomeErro =>
+            Nome.Length > 0 && string.IsNullOrWhiteSpace(Nome) ? "O nome é obrigatório." : string.Empty;
+
+        public string EmailErro =>
+            Email.Length == 0 || Validador.EmailValido(Email) ? string.Empty : "Email inválido. Use o formato nome@dominio.pt";
+
+        public string NifErro =>
+            NIF.Length == 0 || Validador.NifValido(NIF) ? string.Empty
+            : !NIF.All(char.IsDigit) ? "O NIF só pode conter dígitos."
+            : $"O NIF deve ter 9 dígitos (tem {NIF.Length}).";
+
+        public string PasswordErro =>
+            Password.Length == 0 || PasswordValidator.Validar(Password, out string motivo) ? string.Empty : motivo;
+
+        public string ConfirmacaoErro =>
+            PasswordConfirmacao.Length == 0 || PasswordConfirmacao == Password ? string.Empty : "As palavras-passe não coincidem.";
+
+        public string CargoErro =>
+            string.IsNullOrWhiteSpace(Cargo) ? "O cargo é obrigatório." : string.Empty;
+
+        /// <summary>
+        /// Explica ao utilizador porque é que o botão de registo está desativado.
+        /// </summary>
+        public string AjudaFormulario =>
+            PodeRegistar() ? string.Empty : "Preencha todos os campos corretamente para poder finalizar o registo.";
+
+        /// <summary>
+        /// Verdadeiro quando o registo é uma janela própria (aberta a partir do Login),
+        /// caso em que se pode voltar ao Login.
+        /// </summary>
+        public bool PodeVoltar => CloseWindowAction != null;
         #endregion
 
         #region Commands
         public ICommand RegistarCommand { get; }
         public ICommand LimparCamposCommand { get; }
+        public ICommand VoltarCommand { get; }
         #endregion
 
         /// <summary>
@@ -111,6 +148,7 @@ namespace POOfase1trabalho13_11.ViewModels
 
             RegistarCommand = new ViewModelCommand(p => ExecutarRegisto(), p => PodeRegistar());
             LimparCamposCommand = new ViewModelCommand(p => LimparCampos());
+            VoltarCommand = new ViewModelCommand(p => VoltarAoLogin());
         }
         #endregion
 
@@ -118,21 +156,39 @@ namespace POOfase1trabalho13_11.ViewModels
 
         /// <summary>
         /// Validação em tempo real (CanExecute). 
-        /// Garante que os campos mínimos estão preenchidos e as passwords coincidem.
+        /// O botão só fica ativo com todos os campos preenchidos e sem erros de validação.
         /// </summary>
         private bool PodeRegistar()
         {
-            return !string.IsNullOrWhiteSpace(Nome) &&
-                   !string.IsNullOrWhiteSpace(Email) &&
-                   !string.IsNullOrWhiteSpace(NIF) &&
-                   !string.IsNullOrWhiteSpace(Password) &&
-                   Password == PasswordConfirmacao && // Passwords devem coincidir
-                   Password.Length >= 6; // Mesmo mínimo do PasswordValidator
+            // Todos os campos preenchidos e sem nenhum erro de validação
+            return Nome.Length > 0 && Email.Length > 0 && NIF.Length > 0 &&
+                   Password.Length > 0 && PasswordConfirmacao.Length > 0 && Cargo.Length > 0 &&
+                   string.IsNullOrEmpty(NomeErro) && string.IsNullOrEmpty(EmailErro) &&
+                   string.IsNullOrEmpty(NifErro) && string.IsNullOrEmpty(PasswordErro) &&
+                   string.IsNullOrEmpty(ConfirmacaoErro) && string.IsNullOrEmpty(CargoErro);
         }
 
         private void NotificarComandos()
         {
-            (RegistarCommand as ViewModelCommand)?.RaiseCanExecuteChanged();// Notifica o comando para reavaliar CanExecute
+            (RegistarCommand as ViewModelCommand)?.RaiseCanExecuteChanged(); // reavalia CanExecute
+
+            // Atualiza as mensagens de validação mostradas por baixo de cada campo
+            OnPropertyChanged(nameof(NomeErro));
+            OnPropertyChanged(nameof(EmailErro));
+            OnPropertyChanged(nameof(NifErro));
+            OnPropertyChanged(nameof(PasswordErro));
+            OnPropertyChanged(nameof(ConfirmacaoErro));
+            OnPropertyChanged(nameof(CargoErro));
+            OnPropertyChanged(nameof(AjudaFormulario));
+        }
+
+        private void VoltarAoLogin()
+        {
+            if (CloseWindowAction == null) return;
+
+            var loginWindow = _viewFactory.CreateView(ViewType.Login);
+            loginWindow.Show();
+            CloseWindowAction.Invoke();
         }
 
 
