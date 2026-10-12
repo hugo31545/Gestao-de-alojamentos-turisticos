@@ -1,76 +1,99 @@
-# Gestão de Alojamentos Turísticos
+# Tourist Accommodation Management
 
-Aplicação de secretária em **C# / WPF** para gerir alojamentos turísticos: clientes, alojamentos, reservas, check-in/check-out e auditoria das operações. O projeto segue o paradigma da Programação Orientada a Objetos e a arquitetura **MVVM**, e guarda os dados em ficheiros **JSON**.
+[![CI](https://github.com/hugo31545/Gestao-de-alojamentos-turisticos/actions/workflows/main.yml/badge.svg)](https://github.com/hugo31545/Gestao-de-alojamentos-turisticos/actions/workflows/main.yml)
+![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)
+![WPF](https://img.shields.io/badge/UI-WPF-0078D4)
+![Tests](https://img.shields.io/badge/tests-178%20passing-brightgreen)
 
-Trabalho prático da unidade curricular **Programação Orientada a Objetos** — Licenciatura em Engenharia de Sistemas Informáticos, Escola Superior de Tecnologia, Instituto Politécnico do Cávado e do Ave (IPCA), ano letivo 2025/2026.
+A **Windows desktop application (C# / .NET 8 / WPF)** for running a small hotel or holiday-rental business: guests, properties, bookings, check-in/check-out, reports and a full audit trail, in one place.
 
-- **Autor:** Hugo Manuel Alves Gomes (nº 31545)
-- **Docente:** Ernesto Casanova
-- **Relatório:** [trabalhoPOO_31545_Fase2Relatório.pdf](Gest%C3%A3o%20de%20alojamentos%20tur%C3%ADsticos/POOfase1trabalho13-11/trabalhoPOO_31545_Fase2Relat%C3%B3rio.pdf)
+It started as the coursework project for *Object-Oriented Programming* (BSc in Informatics Engineering, IPCA, Portugal). After the first working version, I reviewed my own code, found security, data-integrity and business-logic problems, and fixed them with tests. This README documents both the product and the engineering work behind it.
 
----
+> The user interface is in Portuguese. The code, comments and this document describe it in English where it matters; the full academic report (UML, requirements, design decisions) is in Portuguese: [trabalhoPOO_31545_Fase2Relatório.pdf](Gest%C3%A3o%20de%20alojamentos%20tur%C3%ADsticos/POOfase1trabalho13-11/trabalhoPOO_31545_Fase2Relat%C3%B3rio.pdf).
 
-## Funcionalidades
+## Highlights
 
-| Área | O que permite |
+- **Clean MVVM architecture** with dependency injection, the Repository pattern and a service layer. No business logic in the views.
+- **Security:** passwords stored as salted **PBKDF2-SHA256** hashes (100,000 iterations) with constant-time comparison; legacy plain-text accounts are migrated transparently on first login; password fields are masked.
+- **Booking workflow as a state machine:** `Pending → Confirmed → Checked-in → Completed` (or `Cancelled`), with transitions validated by the booking entity's own methods and buttons enabled only when the action is allowed.
+- **Data safety:** atomic JSON writes (temporary file + replace), automatic copy of any unreadable data file, and in-memory rollback when a write fails.
+- **Audit trail:** every critical operation is recorded with the user who performed it.
+- **178 automated tests** (unit, integration with real files, ViewModel and XAML-loading tests), executed on every push by **GitHub Actions**.
+- **Zero compiler warnings**, nullable reference types enabled.
+
+## Features
+
+| Area | What it does |
 |---|---|
-| **Autenticação** | Registo de funcionários com conta de acesso e login. As passwords são validadas pela DLL `POO.Security` (mínimo 6 caracteres e 1 número) e guardadas apenas como hash PBKDF2. |
-| **Alojamentos** | Criar, editar, remover e mudar o estado (Disponível, Ocupado, Manutenção, Indisponível). Não é possível remover alojamentos com reservas ativas. |
-| **Clientes** | Registo e edição com validação de NIF (9 dígitos) e email, sem duplicados. |
-| **Reservas** | Pesquisa de alojamentos livres no período pedido (sem sobreposição de datas), criação, confirmação e cancelamento. O preço total fica guardado na reserva. |
-| **Check-in / Check-out** | O check-in marca o alojamento como Ocupado; o check-out finaliza a reserva e envia o alojamento para Manutenção (limpeza). |
-| **Auditoria** | Cada operação crítica gera um registo com o utilizador que a fez, consultável e filtrável na aplicação. |
-| **Relatórios** | Taxa de ocupação, faturação por período, alojamentos mais caros e clientes com mais reservas. Cada consulta fica registada no histórico com o utilizador que a pediu. |
+| **Authentication** | Staff registration with a linked login account; password policy in a separate `POO.Security` library; session tracking so the signed-in user appears in the UI and in the audit log. |
+| **Properties** | Create, edit, delete and change status (Available, Occupied, Maintenance, Unavailable). Deletion is blocked while active bookings exist. |
+| **Guests** | Registration and editing with NIF (tax ID) and email validation and duplicate detection. A guest with active bookings cannot be deleted. |
+| **Bookings** | Availability search with date-overlap detection, creation, confirmation and cancellation. No past dates, at least one guest, capacity enforced. The total price is frozen when the booking is made. |
+| **Check-in / Check-out** | Check-in marks the property as Occupied; check-out completes the booking and sends the property to Maintenance (cleaning). Checks the date window and that the property is actually free. |
+| **Audit log** | Searchable history of who did what and when. Individual entries cannot be edited or deleted; only a retention policy can purge old ones. |
+| **Reports** | Current occupancy rate, revenue for a date range, most expensive properties, top guests, and a history of the reports each user ran. |
 
-### Ciclo de vida de uma reserva
-
-```
-Pendente ──Confirmar──▶ Confirmada ──Check-in──▶ CheckInRealizado ──Check-out──▶ Finalizada
-    │                        │
-    └──────Cancelar──────────┴──▶ Cancelada
-```
-
-Cada botão só fica ativo quando a reserva está no estado que o permite.
-
----
-
-## Arquitetura
+### Booking lifecycle
 
 ```
-View (XAML)  ⇄  ViewModel  ──▶  Service (regras de negócio)  ──▶  Repository (JSON)
-   binding       comandos         validação, auditoria            persistência
+Pending ──Confirm──▶ Confirmed ──Check-in──▶ CheckedIn ──Check-out──▶ Completed
+   │                     │
+   └─────Cancel──────────┴──▶ Cancelled
 ```
 
-- **Model** — entidades (`Alojamento`, `Cliente`, `Reserva`, `CheckIn`, `Employee`, `User`, `Registo`, `Consulta`), enums, serviços com as regras de negócio e repositórios.
-- **ViewModel** — propriedades observáveis e comandos (`ViewModelCommand`, `RelayCommand<T>`). As caixas de diálogo passam por `IDialogService`, para as ViewModels poderem ser testadas sem interface gráfica.
-- **View** — janelas e páginas WPF ligadas às ViewModels por data binding.
-
-Padrões utilizados: **Repository** (`JsonRepository<T>` genérico + repositórios específicos), **Command**, **Factory** (`ViewFactory`) e **injeção de dependências** (`Microsoft.Extensions.DependencyInjection`, configurada em `App.xaml.cs`). As violações das regras de negócio são sinalizadas com a exceção personalizada `BusinessException`.
-
-### Estrutura da solução
+## Architecture
 
 ```
-Gestão de alojamentos turísticos/POOfase1trabalho13-11/
-├── POOfase1trabalho13-11.sln          Solução (aplicação, DLL e testes)
-├── POOfase1trabalho13-11/             Aplicação WPF
-│   ├── Models/
-│   │   ├── Entities/                  Entidades do domínio
-│   │   ├── Enums/                     Estados e tipos
-│   │   ├── Repositories/              Interfaces + implementações JSON
-│   │   ├── Services/                  Regras de negócio, autenticação, sessão
-│   │   └── Validation/                Validação de NIF e email
-│   ├── ViewModels/                    ViewModels, comandos e IDialogService
-│   ├── Views/                         XAML, ViewFactory, helpers
-│   └── Exceptions/                    BusinessException
-├── POO.Security/                      DLL: PasswordValidator e PasswordHasher
-└── POOfase1trabalho13_11.Tests/       Testes NUnit + Moq
+View (XAML)  ⇄  ViewModel  ──▶  Service (business rules)  ──▶  Repository (JSON)
+  data binding    commands        validation, auditing           persistence
 ```
 
----
+| Layer | Responsibility |
+|---|---|
+| **Model** | Domain entities, enums, services with the business rules, repositories, validation. |
+| **ViewModel** | Observable state and commands. Dialogs go through `IDialogService` and the signed-in user through `ISessionService`, so ViewModels are testable without a UI. |
+| **View** | WPF/XAML bound to ViewModels; no logic in code-behind. |
 
-## Como executar
+**Domain model:** `Alojamento` (property), `Cliente` (guest), `Employee`, `User`, `Reserva` (booking), `CheckIn`, `Registo` (audit entry) and `Consulta` (report history entry).
 
-**Requisitos:** Windows e [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (ou Visual Studio 2022 com a carga de trabalho *Desenvolvimento para desktop .NET*).
+**Patterns and techniques:** Repository (generic `JsonRepository<T>` plus specific repositories), Command, Factory (`ViewFactory`), Dependency Injection (`Microsoft.Extensions.DependencyInjection`), interface-based design, custom `BusinessException`, LINQ, `ObservableCollection`, and attached properties (a `PasswordBox` binding helper).
+
+**OOP concepts demonstrated:** inheritance (generic repository base class with eight subclasses; `BaseViewModel`), polymorphism (interface-based services, overridable repository methods), abstraction (an interface for every service and repository) and encapsulation (validated properties and domain methods that guard state changes).
+
+### Solution layout
+
+```
+POOfase1trabalho13-11/
+├── POOfase1trabalho13-11/             WPF application
+│   ├── Models/        Entities · Enums · Repositories · Services · Validation
+│   ├── ViewModels/    ViewModels · Commands · IDialogService
+│   ├── Views/         XAML · ViewFactory · helpers · dialog service
+│   └── Exceptions/    BusinessException
+├── POO.Security/                      Class library: password policy and hashing
+└── POOfase1trabalho13_11.Tests/       NUnit + Moq tests
+```
+
+## Engineering work: review and hardening
+
+After the first version worked, I reviewed the whole codebase and fixed what I found. Each item below was a real defect or risk, fixed in its own commit on a `develop` branch.
+
+| Problem found | What I did |
+|---|---|
+| Passwords stored in plain text | PBKDF2 hashing with per-password salt; transparent migration of existing accounts. |
+| Check-in/check-out in the UI bypassed the business rules, so occupancy and revenue always showed 0 | One workflow through `CheckInService`; added the missing *Confirm* step; entity-level state-transition checks. |
+| Registering a staff member could leave a login account with no employee record | Validate everything first, and roll back the account if the second step fails. |
+| A corrupted JSON file was silently replaced by an empty one on the next save | Copy the damaged file aside, warn the user, and continue. |
+| The log-cleanup feature always failed against the real repository (it passed only because the test mocked it) | Added an explicit retention operation and an integration test with the real repository. |
+| Business rules too loose: bookings in the past, zero guests, deleting properties/guests with active bookings, bad NIF or email | Validation in the service layer, shared validator, tests for each rule. |
+| `MessageBox` calls inside ViewModels and a WPF dependency inside the data layer | `IDialogService`; the repository reports problems through an event instead of opening windows. |
+| Audit log always said "System" | `ISessionService` records the real user. |
+| ID generation duplicated in 7 repositories | Centralised in the base repository, with duplicate-ID protection. |
+| Data saved under `bin/`, lost on clean or redeploy | Stored in the user's local app-data folder, with automatic migration. |
+| CI compiled the code but never ran the tests (the test project was not in the solution) | Solution fixed; CI now builds in Release and runs all tests. |
+
+## Getting started
+
+**Requirements:** Windows and the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (WPF is Windows-only).
 
 ```bash
 git clone https://github.com/hugo31545/Gestao-de-alojamentos-turisticos.git
@@ -78,40 +101,29 @@ cd "Gestao-de-alojamentos-turisticos/Gestão de alojamentos turísticos/POOfase1
 dotnet run --project POOfase1trabalho13-11
 ```
 
-No Visual Studio, abrir `POOfase1trabalho13-11.sln` e definir `POOfase1trabalho13-11` como projeto de arranque.
+On first launch, click **Criar Conta** (create account) on the login screen. The email is the username.
 
-Na primeira utilização, criar uma conta em **Criar Conta** no ecrã de login (o email é o nome de utilizador).
+Data is stored as JSON in `%LocalAppData%\GestaoAlojamentos\Data`, resolved per user at runtime and never hard-coded. Data from older versions found next to the executable is copied there automatically on first run.
 
-### Onde ficam os dados
-
-Os ficheiros JSON (`alojamentos.json`, `clientes.json`, `reservas.json`, `users.json`, …) são guardados em:
-
-```
-%LocalAppData%\GestaoAlojamentos\Data
-```
-
-Se existirem dados de versões anteriores na pasta `bin\...\Data`, são copiados automaticamente na primeira execução. Se um ficheiro estiver danificado, a aplicação guarda uma cópia (`*.corrupt-AAAAMMDD-HHMMSS.json`) antes de continuar e avisa o utilizador.
-
----
-
-## Testes
+## Testing and CI
 
 ```bash
 dotnet test "Gestão de alojamentos turísticos/POOfase1trabalho13-11/POOfase1trabalho13-11.sln"
 ```
 
-- **Testes unitários** dos serviços e entidades, com repositórios simulados (Moq).
-- **Testes de integração** com os repositórios reais numa pasta temporária, incluindo o fluxo completo reserva → check-in → check-out → faturação.
-- **Testes das ViewModels**, com um serviço de diálogos falso.
+- **Unit tests:** services and entities, with repositories mocked using Moq.
+- **Integration tests:** real repositories writing to a temporary folder, including the full flow *booking → confirm → check-in → check-out → revenue*, and recovery from a corrupted file.
+- **ViewModel and UI tests:** commands enabled per booking state, correct use of the session and dialog services, and a test that loads the reports view's XAML on an STA thread.
 
-### Integração contínua
+[GitHub Actions](.github/workflows/main.yml) restores, builds (Release) and tests the solution on every push and pull request to `main` and `develop`. Work is done on `develop` and merged to `main` through a pull request once CI is green.
 
-O workflow [`.github/workflows/main.yml`](.github/workflows/main.yml) compila a solução e corre os testes em cada *push* e *pull request* para `main` e `develop`.
+## What I would do next
 
-**Fluxo de trabalho:** desenvolver na branch `develop` e, quando estiver estável, abrir um pull request para `main`. O merge só deve ser feito com o CI a verde.
+- Replace the JSON files with SQLite or SQL Server (the repository interfaces already isolate the storage).
+- Add role-based permissions, so only administrators can create accounts.
+- Add payments and invoicing, and a calendar view of availability.
+- Add UI automation tests and screenshots.
 
----
+## Author
 
-## Tecnologias
-
-C# 12 · .NET 8 · WPF/XAML · System.Text.Json · LINQ · Microsoft.Extensions.DependencyInjection · NUnit · Moq · GitHub Actions
+**Hugo Gomes** — BSc in Informatics Engineering, IPCA (Instituto Politécnico do Cávado e do Ave), Portugal.
