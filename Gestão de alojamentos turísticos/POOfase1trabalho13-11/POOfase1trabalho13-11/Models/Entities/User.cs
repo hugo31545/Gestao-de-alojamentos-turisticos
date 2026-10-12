@@ -7,6 +7,7 @@
 //-----------------------------------------------------------------
 
 using POOfase1trabalho13_11.Models.Entities.Interfaces;
+using System.Text.Json.Serialization;
 
 namespace POOfase1trabalho13_11.Models.Entities
 {
@@ -29,9 +30,16 @@ namespace POOfase1trabalho13_11.Models.Entities
         public string Username { get; set; } = string.Empty;
 
         /// <summary>
-        /// Obtém ou define a palavra-passe do utilizador.
+        /// Obtém ou define o hash da palavra-passe (formato de <c>PasswordHasher</c>).
         /// </summary>
-        public string Password { get; set; } = string.Empty;
+        public string PasswordHash { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Palavra-passe em texto simples de contas antigas. Só é lida para migração:
+        /// é apagada no primeiro login correto e deixa de ser escrita no ficheiro.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Password { get; set; }
 
         /// <summary>
         /// Obtém ou define a data e hora em que a conta de utilizador foi criada.

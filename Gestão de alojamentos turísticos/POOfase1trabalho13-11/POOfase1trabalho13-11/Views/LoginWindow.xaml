@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:POOfase1trabalho13_11.Views"
+        xmlns:helpers="clr-namespace:POOfase1trabalho13_11.Views.Helpers"
         mc:Ignorable="d"
         Title="Login - Sistema de Gestão"
         Height="350"
@@ -40,10 +41,10 @@
                        FontWeight="Bold"
                        Margin="0,0,0,2"/>
 
-                <TextBox Text="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,0,20"
-                         Height="25"
-                         VerticalContentAlignment="Center"/>
+                <PasswordBox helpers:PasswordBoxHelper.BoundPassword="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,20"
+                             Height="25"
+                             VerticalContentAlignment="Center"/>
 
                 <Button Content="Entrar"
                         Command="{Binding LoginCommand}"

@@ -46,9 +46,9 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         /// Cria um novo utilizador, atribui um ID único e persiste os dados no ficheiro JSON.
         /// </summary>
         /// <param name="username">Nome de utilizador pretendido.</param>
-        /// <param name="password">Palavra-passe (deve ser tratada com hash em produção).</param>
+        /// <param name="passwordHash">O hash da palavra-passe (nunca o texto simples).</param>
         /// <returns>True se o utilizador foi criado com sucesso; False se o nome de utilizador já existir.</returns>
-        public bool CreateUser(string username, string password)
+        public bool CreateUser(string username, string passwordHash)
         {
             // 1. Validação de Unicidade: impede a criação de usernames duplicados
             if (GetUserByUsername(username) != null)
@@ -62,7 +62,7 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             {
                 Id = novoId,
                 Username = username,
-                Password = password,
+                PasswordHash = passwordHash,
                 DataRegisto = DateTime.Now
             };
 

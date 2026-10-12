@@ -28,6 +28,58 @@ namespace POOfase1trabalho13_11.Tests.Services
             );
         }
 
+        #region Testes de Validação de Novo Funcionário
+
+        [TestCase("", "ana@ipca.pt", "123456789", "nome")]
+        [TestCase("Ana", "ana@", "123456789", "email")]
+        [TestCase("Ana", "ana@ipca", "123456789", "email")]
+        [TestCase("Ana", "ana@ipca.pt", "12345678", "NIF")]
+        [TestCase("Ana", "ana@ipca.pt", "12345678A", "NIF")]
+        public void ValidarNovoFuncionario_DadosInvalidos_RetornaFalse(string nome, string email, string nif, string campo)
+        {
+            _mockEmployeeRepo.Setup(r => r.GetAll()).Returns(new List<Employee>());
+
+            bool valido = _employeeService.ValidarNovoFuncionario(nome, email, nif, out string mensagem);
+
+            Assert.IsFalse(valido);
+            Assert.That(mensagem, Does.Contain(campo).IgnoreCase);
+        }
+
+        [Test]
+        public void ValidarNovoFuncionario_EmailDuplicado_RetornaFalse()
+        {
+            _mockEmployeeRepo.Setup(r => r.GetAll()).Returns(new List<Employee>());
+            _mockEmployeeRepo.Setup(r => r.GetByEmail("ana@ipca.pt"))
+                             .Returns(new Employee { Id = 1, Nome = "Ana", NIF = "987654321", Email = "ana@ipca.pt" });
+
+            bool valido = _employeeService.ValidarNovoFuncionario("Ana Nova", "ana@ipca.pt", "123456789", out string mensagem);
+
+            Assert.IsFalse(valido);
+            Assert.That(mensagem, Does.Contain("email"));
+        }
+
+        [Test]
+        public void ValidarNovoFuncionario_DadosValidos_RetornaTrue()
+        {
+            _mockEmployeeRepo.Setup(r => r.GetAll()).Returns(new List<Employee>());
+
+            bool valido = _employeeService.ValidarNovoFuncionario("Ana", "ana@ipca.pt", "123456789", out string mensagem);
+
+            Assert.IsTrue(valido, mensagem);
+        }
+
+        [Test]
+        public void AdicionarFuncionario_NifInvalido_RetornaFalseSemExcecao()
+        {
+            bool resultado = false;
+
+            Assert.DoesNotThrow(() => resultado = _employeeService.AdicionarFuncionario("Ana", "ana@ipca.pt", "123", "Rececionista"));
+            Assert.IsFalse(resultado);
+            _mockEmployeeRepo.Verify(r => r.Save(It.IsAny<Employee>()), Times.Never);
+        }
+
+        #endregion
+
         #region Testes de Validação e Escrita
 
         [Test]

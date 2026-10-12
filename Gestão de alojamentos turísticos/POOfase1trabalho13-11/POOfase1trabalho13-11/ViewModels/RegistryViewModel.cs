@@ -124,7 +124,7 @@ namespace POOfase1trabalho13_11.ViewModels
                    !string.IsNullOrWhiteSpace(NIF) &&
                    !string.IsNullOrWhiteSpace(Password) &&
                    Password == PasswordConfirmacao && // Passwords devem coincidir
-                   Password.Length >= 4;
+                   Password.Length >= 6; // Mesmo mínimo do PasswordValidator
         }
 
         private void NotificarComandos()
@@ -148,42 +148,37 @@ namespace POOfase1trabalho13_11.ViewModels
                     return;
                 }
 
-                // Verificar NIF duplicado (Regra de Negócio do Employee)
-                if (_employeeService.VerificarNifDuplicado(NIF))
+                // Validar os dados do funcionário (formato e duplicados) antes de gravar
+                if (!_employeeService.ValidarNovoFuncionario(Nome, Email, NIF, out string mensagem))
                 {
-                    MensagemFeedback = "Erro: Este NIF já está registado em outro funcionário.";
+                    MensagemFeedback = $"Erro: {mensagem}";
                     return;
                 }
 
                 // 2. EXECUÇÃO DA CRIAÇÃO (Ordem lógica)
 
-                // Primeiro tentamos criar o User (Login)
-               
-                bool userCriado = _authService.CreateUser(Email, Password, PasswordConfirmacao);
-
-                if (!userCriado)
+                // Primeiro criamos o User (Login)
+                if (!_authService.CreateUser(Email, Password, PasswordConfirmacao, out mensagem))
                 {
-                    MensagemFeedback = "Erro: O Email (Username) já está a ser utilizado.";
+                    MensagemFeedback = $"Erro: {mensagem}";
                     return;
                 }
 
                 // Se o utilizador foi criado, criamos o perfil de funcionário
-                bool sucessoFunc = _employeeService.AdicionarFuncionario(Nome, Email, NIF, Cargo);
-
-                if (sucessoFunc)
+                if (!_employeeService.AdicionarFuncionario(Nome, Email, NIF, Cargo))
                 {
-                    MessageBox.Show("Registo completo! Utilizador e Funcionário criados.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Desfaz a criação do User para não deixar uma conta sem funcionário
+                    _authService.RemoveUser(Email);
+                    MensagemFeedback = "Erro ao guardar os detalhes do funcionário. Nenhum dado foi gravado.";
+                    return;
+                }
 
-                    // Navegação
-                    var loginWin = _viewFactory.CreateView(ViewType.Login);
-                    loginWin.Show();
-                    CloseWindowAction?.Invoke();
-                }
-                else
-                {
-                    // Caso extremo: User criado mas Employee falhou
-                    MensagemFeedback = "O utilizador foi criado, mas houve um erro ao guardar os detalhes do funcionário.";
-                }
+                MessageBox.Show("Registo completo! Utilizador e Funcionário criados.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Navegação
+                var loginWin = _viewFactory.CreateView(ViewType.Login);
+                loginWin.Show();
+                CloseWindowAction?.Invoke();
             }
             catch (Exception ex)
             {

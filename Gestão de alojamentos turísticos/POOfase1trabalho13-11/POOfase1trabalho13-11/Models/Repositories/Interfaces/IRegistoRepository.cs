@@ -42,6 +42,13 @@ namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
         /// <param name="utilizador">O nome de utilizador ou identificador do autor da ação.</param>
         /// <returns>Uma coleção de <see cref="Registo"/> associados ao utilizador.</returns>
         IEnumerable<Registo> GetByUtilizador(string utilizador);
+
+        /// <summary>
+        /// Elimina todos os registos anteriores à data de corte (política de retenção).
+        /// </summary>
+        /// <param name="dataCorte">Registos com data inferior a esta são eliminados.</param>
+        /// <returns>O número de registos eliminados.</returns>
+        int RemoverAnterioresA(DateTime dataCorte);
         #endregion
     }
 }

@@ -11,6 +11,7 @@ using System.Linq;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
+using POOfase1trabalho13_11.Models.Validation;
 
 namespace POOfase1trabalho13_11.Models.Services.Implementations
 {
@@ -65,28 +66,73 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// </summary>
         public Employee? ObterPorId(int id) => _employeeRepository.GetById(id);
 
+        /// <summary>
+        /// Valida os dados de um novo funcionário sem gravar nada.
+        /// </summary>
+        public bool ValidarNovoFuncionario(string nome, string email, string nif, out string mensagem)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
+            {
+                mensagem = "O nome é obrigatório.";
+                return false;
+            }
+
+            if (!Validador.EmailValido(email))
+            {
+                mensagem = "O email não tem um formato válido (ex.: nome@dominio.pt).";
+                return false;
+            }
+
+            if (!Validador.NifValido(nif))
+            {
+                mensagem = "O NIF deve ter exatamente 9 dígitos.";
+                return false;
+            }
+
+            if (VerificarNifDuplicado(nif))
+            {
+                mensagem = "Este NIF já está registado em outro funcionário.";
+                return false;
+            }
+
+            if (_employeeRepository.GetByEmail(email) != null)
+            {
+                mensagem = "Este email já está registado em outro funcionário.";
+                return false;
+            }
+
+            mensagem = string.Empty;
+            return true;
+        }
+
         #endregion
 
         #region Write Operations
 
         /// <summary>
         /// Atalho para criação rápida de um funcionário a partir de dados básicos.
+        /// Dados inválidos (ex.: NIF com formato errado) devolvem false em vez de lançar exceção.
         /// </summary>
         public bool AdicionarFuncionario(string nome, string email, string nif, string cargo)
         {
-            var novoFuncionario = new Employee
+            Employee novoFuncionario;
+            try
             {
-                Nome = nome,
-                Email = email,
-                NIF = nif,
-                Cargo = cargo,
-                Id = 0 // Garante que o repositório trate como novo
-            };
+                novoFuncionario = new Employee
+                {
+                    Nome = nome,
+                    Email = email,
+                    NIF = nif,
+                    Cargo = cargo,
+                    Id = 0 // Garante que o repositório trate como novo
+                };
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
 
-            string msg;
-            bool resultado = GuardarFuncionario(novoFuncionario, out msg);
-            
-            return resultado;
+            return GuardarFuncionario(novoFuncionario, out _);
         }
 
         /// <summary>

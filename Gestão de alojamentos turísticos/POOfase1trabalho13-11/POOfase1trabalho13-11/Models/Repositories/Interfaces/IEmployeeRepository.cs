@@ -15,5 +15,14 @@ namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
     public interface IEmployeeRepository : IRepository<Employee>
     {
         // O método Save é herdado de IRepository<Employee>.
+
+        #region Methods
+        /// <summary>
+        /// Procura um funcionário pelo email (sem distinguir maiúsculas de minúsculas).
+        /// </summary>
+        /// <param name="email">O email a procurar.</param>
+        /// <returns>O funcionário encontrado ou <c>null</c>.</returns>
+        Employee? GetByEmail(string email);
+        #endregion
     }
 }

@@ -28,7 +28,7 @@ namespace POO.Utils.Security
             // 1. Validação de nulidade ou espaços em branco
             if (string.IsNullOrWhiteSpace(password))
             {
-                
+                mensagemErro = "A palavra-passe é obrigatória.";
                 return false;
             }
 
@@ -36,14 +36,14 @@ namespace POO.Utils.Security
             // Requisito: Segurança base para evitar ataques de força bruta simples.
             if (password.Length < 6)
             {
-                
+                mensagemErro = "A palavra-passe deve ter pelo menos 6 caracteres.";
                 return false;
             }
 
             // verificar se contém pelo menos um número
             if (!System.Linq.Enumerable.Any(password, char.IsDigit))
             {
-                
+                mensagemErro = "A palavra-passe deve conter pelo menos um número.";
                 return false;
             }
 

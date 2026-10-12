@@ -114,13 +114,42 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             {
                 
                 System.Diagnostics.Debug.WriteLine($"ERRO DE FORMATO JSON: {jex.Message}");
-                MessageBox.Show($"Erro de formato no ficheiro {Path.GetFileName(_filePath)}. O ficheiro pode estar corrompido.", "Erro de Dados");
+                string? copia = PreservarFicheiroDanificado();
+                MessageBox.Show($"Erro de formato no ficheiro {Path.GetFileName(_filePath)}. O ficheiro pode estar corrompido." +
+                                (copia != null ? $"\nFoi guardada uma cópia em {Path.GetFileName(copia)}." : string.Empty),
+                                "Erro de Dados");
                 Items = new List<TEntity>();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ERRO CRÍTICO: {ex.Message}");
+                PreservarFicheiroDanificado();
                 Items = new List<TEntity>();
+            }
+        }
+
+        /// <summary>
+        /// Copia um ficheiro que não foi possível ler para <c>nome.corrupt-AAAAMMDD-HHMMSS.json</c>,
+        /// para que a próxima gravação (com a lista vazia) não apague os dados originais.
+        /// </summary>
+        /// <returns>O caminho da cópia, ou <c>null</c> se não foi possível criá-la.</returns>
+        private string? PreservarFicheiroDanificado()
+        {
+            try
+            {
+                if (!File.Exists(_filePath)) return null;
+
+                string copia = Path.Combine(
+                    Path.GetDirectoryName(_filePath)!,
+                    $"{Path.GetFileNameWithoutExtension(_filePath)}.corrupt-{DateTime.Now:yyyyMMdd-HHmmss}{Path.GetExtension(_filePath)}");
+
+                File.Copy(_filePath, copia, overwrite: false);
+                return copia;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Não foi possível copiar o ficheiro danificado: {ex.Message}");
+                return null;
             }
         }
 
