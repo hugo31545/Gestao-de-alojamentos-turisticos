@@ -54,19 +54,15 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             if (GetUserByUsername(username) != null)
                 return false;
 
-            // 2. Gerar ID de auto-incremento
-            int novoId = Items.Any() ? Items.Max(u => u.Id) + 1 : 1;
-
-            // 3. Instanciar o novo objeto User
+            // 2. Instanciar o novo objeto User (o ID é gerado pela classe base no Add)
             var novoUser = new User
             {
-                Id = novoId,
                 Username = username,
                 PasswordHash = passwordHash,
                 DataRegisto = DateTime.Now
             };
 
-            // 4. Adicionar à lista e disparar a gravação física no ficheiro via classe base
+            // 3. Adicionar à lista e disparar a gravação física no ficheiro via classe base
             Add(novoUser);
 
             return true;

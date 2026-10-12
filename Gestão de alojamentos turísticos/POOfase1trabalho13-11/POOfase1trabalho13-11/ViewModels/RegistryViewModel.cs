@@ -5,6 +5,7 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.ViewModels.Services;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using POOfase1trabalho13_11.ViewModels.Commands;
@@ -12,7 +13,6 @@ using POOfase1trabalho13_11.Views.Enums;
 using POOfase1trabalho13_11.Views.Factories;
 using POOfase1trabalho13_11.Views.Interfaces;
 using System;
-using System.Windows;
 using System.Windows.Input;
 
 namespace POOfase1trabalho13_11.ViewModels
@@ -24,6 +24,8 @@ namespace POOfase1trabalho13_11.ViewModels
     /// </summary>
     public class RegistryViewModel : BaseViewModel
     {
+        private readonly IDialogService _dialog;
+
         #region Fields
         private readonly IEmployeeService _employeeService;
         private readonly IRegistoService _registoService;
@@ -99,8 +101,9 @@ namespace POOfase1trabalho13_11.ViewModels
 
         #region Constructor
         public RegistryViewModel(IEmployeeService employeeService, IRegistoService registoService,
-                         IViewFactory viewFactory, IAuthenticationService authService)
+                         IViewFactory viewFactory, IAuthenticationService authService, IDialogService dialogService)
         {
+            _dialog = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _employeeService = employeeService;
             _registoService = registoService;
             _viewFactory = viewFactory;
@@ -173,12 +176,21 @@ namespace POOfase1trabalho13_11.ViewModels
                     return;
                 }
 
-                MessageBox.Show("Registo completo! Utilizador e Funcionário criados.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                _dialog.Informar("Registo completo! Utilizador e Funcionário criados.", "Sucesso");
 
-                // Navegação
-                var loginWin = _viewFactory.CreateView(ViewType.Login);
-                loginWin.Show();
-                CloseWindowAction?.Invoke();
+                if (CloseWindowAction != null)
+                {
+                    // Janela de registo aberta a partir do Login: regressa ao Login
+                    var loginWin = _viewFactory.CreateView(ViewType.Login);
+                    loginWin.Show();
+                    CloseWindowAction.Invoke();
+                }
+                else
+                {
+                    // Página dentro da janela principal: fica na página, pronta para outro registo
+                    LimparCampos();
+                    MensagemFeedback = string.Empty;
+                }
             }
             catch (Exception ex)
             {

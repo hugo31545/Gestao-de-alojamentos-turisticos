@@ -84,18 +84,5 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         }
 
 
-        /// <summary>
-        /// Adiciona um novo log de auditoria ao ficheiro, gerando automaticamente um identificador único.
-        /// </summary>
-        /// <param name="log">O objeto de log a registar.</param>
-        public override void Add(Registo log)
-        {
-            // Auto-incremento de segurança para garantir a ordem cronológica dos logs
-            if (log.Id <= 0)
-                log.Id = Items.Any() ? Items.Max(r => r.Id) + 1 : 1;
-
-            base.Add(log);
-        }
-
     }
 }

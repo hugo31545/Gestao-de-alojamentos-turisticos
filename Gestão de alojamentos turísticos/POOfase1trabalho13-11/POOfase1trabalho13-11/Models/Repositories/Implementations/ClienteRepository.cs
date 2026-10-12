@@ -65,40 +65,5 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             return Items.Where(c => c.Nome.Contains(nomeParcial, StringComparison.OrdinalIgnoreCase));
         }
 
-        #region Save Logic
-        /// <summary>
-        /// Determina se o cliente deve ser adicionado como novo ou atualizado.
-        /// Interface simplificada para utilização nas ViewModels.
-        /// </summary>
-        /// <param name="cliente">O cliente a gravar.</param>
-        /// <returns>Verdadeiro se a operação for concluída com sucesso.</returns>
-        public override bool Save(Cliente cliente)
-        {
-            if (cliente == null) return false;
-
-            // Se o ID é 0 ou não existe, usamos o Add (que já gera o ID automático no nosso override abaixo)
-            if (cliente.Id <= 0 || GetById(cliente.Id) == null)
-            {
-                Add(cliente);
-                return true;
-            }
-
-            return Update(cliente);
-        }
-
-        /// <summary>
-        /// Adiciona um novo cliente e garante a atribuição de um ID único incremental.
-        /// </summary>
-        /// <param name="cliente">O cliente a adicionar.</param>
-        public override void Add(Cliente cliente)
-        {
-            // Garantir ID único se ainda não tiver um
-            if (cliente.Id <= 0)
-            {
-                cliente.Id = Items.Any() ? Items.Max(c => c.Id) + 1 : 1;
-            }
-            base.Add(cliente);
-        }
-        #endregion
     }
 }

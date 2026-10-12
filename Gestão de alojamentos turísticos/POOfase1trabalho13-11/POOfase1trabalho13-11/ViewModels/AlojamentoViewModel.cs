@@ -5,13 +5,13 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.ViewModels.Services;
 using POOfase1trabalho13_11.Exceptions;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using POOfase1trabalho13_11.ViewModels.Commands;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
 
 
@@ -25,6 +25,8 @@ namespace POOfase1trabalho13_11.ViewModels
     /// </summary>
     public class AlojamentoViewModel : BaseViewModel
     {
+        private readonly IDialogService _dialog;
+
         #region Fields
         private readonly IAlojamentoService _alojamentoService;
         private ObservableCollection<Alojamento> _listaAlojamentos;
@@ -100,8 +102,9 @@ namespace POOfase1trabalho13_11.ViewModels
         /// <summary>
         /// Inicializa a ViewModel e injeta as dependências necessárias.
         /// </summary>
-        public AlojamentoViewModel(IAlojamentoService alojamentoService)
+        public AlojamentoViewModel(IAlojamentoService alojamentoService, IDialogService dialogService)
         {
+            _dialog = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _alojamentoService = alojamentoService ?? throw new ArgumentNullException(nameof(alojamentoService));
             _listaAlojamentos = new ObservableCollection<Alojamento>();
             _alojamentoEmEdicao = new Alojamento();
@@ -151,7 +154,7 @@ namespace POOfase1trabalho13_11.ViewModels
             catch (Exception ex)
             {
                 MensagemStatus = "Erro ao carregar dados.";
-                MessageBox.Show($"Erro: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialog.Erro($"Erro: {ex.Message}", "Erro");
             }
         }
 
@@ -226,20 +229,19 @@ namespace POOfase1trabalho13_11.ViewModels
                 ExecutarCarregarDados();
                 ExecutarNovo();
 
-                MessageBox.Show("Alojamento persistido com sucesso!", "Sucesso",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                _dialog.Informar("Alojamento persistido com sucesso!", "Sucesso");
 
                 
             }
             catch (BusinessException ex)
             {
                 MensagemStatus = $"Aviso: {ex.Message}";
-                MessageBox.Show(ex.Message, "Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _dialog.Avisar(ex.Message, "Validação");
             }
             catch (Exception ex)
             {
                 MensagemStatus = "Erro crítico ao gravar.";
-                MessageBox.Show($"Erro inesperado: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialog.Erro($"Erro inesperado: {ex.Message}", "Erro");
             }
         }
 
@@ -250,10 +252,9 @@ namespace POOfase1trabalho13_11.ViewModels
         {
             if (AlojamentoSelecionado == null) return;
 
-            var confirmacao = MessageBox.Show($"Deseja remover '{AlojamentoSelecionado.Nome}'?\nEsta ação não pode ser desfeita.",
-                "Confirmar Exclusão", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            bool confirmacao = _dialog.Confirmar($"Deseja remover '{AlojamentoSelecionado.Nome}'?\nEsta ação não pode ser desfeita.", "Confirmar Exclusão");
 
-            if (confirmacao == MessageBoxResult.Yes)
+            if (confirmacao)
             {
                 try
                 {
@@ -266,7 +267,7 @@ namespace POOfase1trabalho13_11.ViewModels
                 catch (BusinessException ex)
                 {
                     MensagemStatus = ex.Message;
-                    MessageBox.Show(ex.Message, "Bloqueio", MessageBoxButton.OK, MessageBoxImage.Stop);
+                    _dialog.Erro(ex.Message, "Bloqueio");
                 }
             }
         }
@@ -288,7 +289,7 @@ namespace POOfase1trabalho13_11.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao mudar estado: {ex.Message}");
+                _dialog.Erro($"Erro ao mudar estado: {ex.Message}");
             }
         }
        

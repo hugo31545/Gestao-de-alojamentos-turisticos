@@ -5,11 +5,11 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.ViewModels.Services;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Enums;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
 using POOfase1trabalho13_11.ViewModels.Commands;
 
@@ -22,11 +22,14 @@ namespace POOfase1trabalho13_11.ViewModels
     /// </summary>
     public class ReservaViewModel : BaseViewModel
     {
+        private readonly IDialogService _dialog;
+
         #region Services
         private readonly IReservaService _reservaService;
         private readonly IClienteService _clienteService;
         private readonly IAlojamentoService _alojamentoService;
         private readonly ICheckInService _checkInService;
+        private readonly ISessionService _sessao;
 
         #endregion
 
@@ -142,7 +145,7 @@ namespace POOfase1trabalho13_11.ViewModels
         /// <summary>
         /// Nome registado na auditoria como responsável pelo check-in/check-out.
         /// </summary>
-        private string UtilizadorAtual => "Sistema";
+        private string UtilizadorAtual => _sessao.NomeParaAuditoria;
         #endregion
 
 
@@ -160,12 +163,14 @@ namespace POOfase1trabalho13_11.ViewModels
 
 
 
-        public ReservaViewModel(IReservaService reservaService, IClienteService clienteService, IAlojamentoService alojamentoService, ICheckInService checkInService)
+        public ReservaViewModel(IReservaService reservaService, IClienteService clienteService, IAlojamentoService alojamentoService, ICheckInService checkInService, ISessionService sessao, IDialogService dialogService)
         {
+            _dialog = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _reservaService = reservaService;
             _clienteService = clienteService;
             _alojamentoService = alojamentoService;
             _checkInService = checkInService;
+            _sessao = sessao;
 
 
             CriarReservaCommand = new ViewModelCommand(p => ExecutarCriarReserva(), p => PodeReservar());
@@ -214,12 +219,12 @@ namespace POOfase1trabalho13_11.ViewModels
 
             if (_reservaService.ConfirmarReserva(reserva.Id, out string msg))
             {
-                MessageBox.Show(msg, "Confirmação", MessageBoxButton.OK, MessageBoxImage.Information);
+                _dialog.Informar(msg, "Confirmação");
                 CarregarDados();
             }
             else
             {
-                MessageBox.Show(msg, "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _dialog.Avisar(msg, "Atenção");
             }
         }
 
@@ -231,12 +236,12 @@ namespace POOfase1trabalho13_11.ViewModels
             // O CheckInService também marca o alojamento como Ocupado e regista na auditoria
             if (_checkInService.RealizarCheckIn(reserva.Id, UtilizadorAtual, out string msg))
             {
-                MessageBox.Show(msg, "Check-In", MessageBoxButton.OK, MessageBoxImage.Information);
+                _dialog.Informar(msg, "Check-In");
                 CarregarDados();
             }
             else
             {
-                MessageBox.Show(msg, "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _dialog.Avisar(msg, "Atenção");
             }
         }
 
@@ -248,12 +253,12 @@ namespace POOfase1trabalho13_11.ViewModels
             // Finaliza a reserva (conta para a faturação) e envia o alojamento para manutenção/limpeza
             if (_checkInService.RealizarCheckOut(reserva.Id, UtilizadorAtual, out string msg))
             {
-                MessageBox.Show(msg, "Check-Out", MessageBoxButton.OK, MessageBoxImage.Information);
+                _dialog.Informar(msg, "Check-Out");
                 CarregarDados();
             }
             else
             {
-                MessageBox.Show(msg, "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialog.Erro(msg, "Erro");
             }
         }
 
@@ -264,19 +269,19 @@ namespace POOfase1trabalho13_11.ViewModels
 
             if (string.IsNullOrWhiteSpace(MotivoCancelamento))
             {
-                MessageBox.Show("Por favor, indique um motivo no campo em baixo.", "Aviso");
+                _dialog.Avisar("Por favor, indique um motivo no campo em baixo.", "Aviso");
                 return;
             }
 
             if (_reservaService.CancelarReserva(reserva.Id, MotivoCancelamento, out string msg))
             {
-                MessageBox.Show(msg);
+                _dialog.Informar(msg);
                 MotivoCancelamento = string.Empty;
                 CarregarDados();
             }
             else
             {
-                MessageBox.Show(msg, "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _dialog.Avisar(msg, "Atenção");
             }
         }
         private void CarregarDados()
@@ -339,8 +344,8 @@ namespace POOfase1trabalho13_11.ViewModels
                 out string mensagem
             );
 
-            MessageBox.Show(mensagem, sucesso ? "Sucesso" : "Atenção", MessageBoxButton.OK,
-                            sucesso ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            if (sucesso) _dialog.Informar(mensagem, "Sucesso");
+            else _dialog.Avisar(mensagem);
 
             if (sucesso)
             {

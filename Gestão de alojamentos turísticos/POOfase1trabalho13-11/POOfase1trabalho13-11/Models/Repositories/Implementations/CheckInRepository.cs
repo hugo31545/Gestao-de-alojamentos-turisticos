@@ -36,18 +36,5 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             return Items.FirstOrDefault(c => c.ReservaId == reservaId);
         }
 
-
-        /// <summary>
-        /// Adiciona um novo registo de check-in ao sistema.
-        /// Inclui lógica de auto-incremento para garantir a unicidade do ID.
-        /// </summary>
-        /// <param name="checkIn">O objeto de check-in a adicionar.</param>
-        public override void Add(CheckIn checkIn)
-        {
-            if (checkIn.Id <= 0)
-                checkIn.Id = Items.Any() ? Items.Max(c => c.Id) + 1 : 1;
-
-            base.Add(checkIn);
-        }
     }
 }

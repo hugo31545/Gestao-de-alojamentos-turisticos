@@ -45,20 +45,5 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         public IEnumerable<Consulta> GetByTipo(string tipo) =>
             Items.Where(c => c.Tipo.Equals(tipo, StringComparison.OrdinalIgnoreCase));
 
-
-        /// <summary>
-        /// Adiciona um novo registo de consulta ao histórico.
-        /// Implementa a atribuição automática de ID único através de auto-incremento.
-        /// </summary>
-        /// <param name="consulta">O objeto de consulta a persistir.</param>
-        public override void Add(Consulta consulta)
-        {
-            // Lógica de auto-incremento: garante que cada registo de histórico tenha um ID único
-            if (consulta.Id <= 0)
-                consulta.Id = Items.Any() ? Items.Max(c => c.Id) + 1 : 1;
-
-            // Invoca o método base para adicionar à lista e gravar no ficheiro JSON
-            base.Add(consulta);
-        }
     }
 }

@@ -39,26 +39,6 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             return Items.Where(a => a.Estado == EstadoAlojamento.Disponivel);
         }
 
-        /// <summary>
-        /// Salva um alojamento, decidindo se deve adicionar um novo ou atualizar um existente.
-        /// </summary>
-        /// <param name="alojamento">O objeto alojamento a persistir.</param>
-        /// <returns>Verdadeiro se a operação for bem-sucedida.</returns>
-        public override bool Save(Alojamento alojamento)
-        {
-            if (alojamento == null) return false;
-
-            // Se é novo (ID <= 0) ou se não existe na lista atual
-            if (alojamento.Id <= 0 || GetById(alojamento.Id) == null)
-            {
-                Add(alojamento); 
-                return true;
-            }
-
-            // Se já existe, força o Update e consequentemente o SaveToFile
-            return Update(alojamento);
-        }
-
 
         /// <summary>
         /// Procura um alojamento através do seu nome, ignorando maiúsculas e minúsculas.
@@ -94,26 +74,5 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         }
         #endregion 
 
-        #region Overrides (Customização da Base)
-        /// <summary>
-        /// Adiciona um novo alojamento à lista e atribui automaticamente um ID único (auto-incremento).
-        /// </summary>
-        /// <param name="alojamento">O alojamento a adicionar.</param>
-        /// <exception cref="InvalidOperationException">Lançada se o ID fornecido manualmente já estiver em uso.</exception>
-        public override void Add(Alojamento alojamento)
-        {
-            // 1. Verificação de segurança para IDs manuais
-            if (alojamento.Id > 0 && Items.Any(a => a.Id == alojamento.Id))
-                throw new InvalidOperationException($"O ID {alojamento.Id} já está em uso.");
-
-            // 2. Auto-incremento robusto
-            if (alojamento.Id <= 0)
-            {
-                alojamento.Id = Items.Any() ? Items.Max(a => a.Id) + 1 : 1;
-            }
-
-            base.Add(alojamento); // Chama o Add da base que já faz o SaveToFile com Streaming
-        }
-        #endregion
     }
 }

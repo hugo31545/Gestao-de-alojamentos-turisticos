@@ -25,6 +25,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         private readonly IAlojamentoRepository _alojamentoRepo;
         private readonly IClienteRepository _clienteRepo;
         private readonly IRegistoRepository _registoRepo;
+        private readonly ISessionService? _sessao;
+
+        /// <summary>
+        /// Autor registado na auditoria: o utilizador com sessão iniciada ou "Sistema".
+        /// </summary>
+        private string Autor => _sessao?.NomeParaAuditoria ?? "Sistema";
         #endregion
 
         #region Constructors
@@ -35,8 +41,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             IReservaRepository reservaRepo,
             IAlojamentoRepository alojamentoRepo,
             IClienteRepository clienteRepo,
-            IRegistoRepository registoRepo)
+            IRegistoRepository registoRepo, ISessionService? sessao = null)
         {
+            _sessao = sessao;
             _reservaRepo = reservaRepo;
             _alojamentoRepo = alojamentoRepo;
             _clienteRepo = clienteRepo;
@@ -106,7 +113,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                     0,
                     "Reserva",
                     $"Nova reserva ID {novaReserva.Id} para o cliente {cliente.Nome}",
-                    "Sistema",
+                    Autor,
                     "CREATE",
                     novaReserva.Id,
                     DateTime.Now
@@ -142,7 +149,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
 
             _reservaRepo.Update(reserva);
 
-            _registoRepo.Add(new Registo(0, "Reserva", motivo, "Sistema", "CANCEL", reservaId, DateTime.Now));
+            _registoRepo.Add(new Registo(0, "Reserva", motivo, Autor, "CANCEL", reservaId, DateTime.Now));
 
             mensagem = "Reserva cancelada com sucesso.";
             return true;
@@ -166,7 +173,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             reserva.Confirmar();
             _reservaRepo.Update(reserva);
 
-            _registoRepo.Add(new Registo(0, "Reserva", $"Reserva {reservaId} confirmada", "Sistema", "CONFIRM", reservaId, DateTime.Now));
+            _registoRepo.Add(new Registo(0, "Reserva", $"Reserva {reservaId} confirmada", Autor, "CONFIRM", reservaId, DateTime.Now));
 
             mensagem = "Reserva confirmada com sucesso.";
             return true;

@@ -23,6 +23,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         private readonly IClienteRepository _clienteRepository;
         private readonly IRegistoRepository _registoRepository;
         private readonly IReservaRepository _reservaRepository;
+        private readonly ISessionService? _sessao;
+
+        /// <summary>
+        /// Autor registado na auditoria: o utilizador com sessão iniciada ou "Sistema".
+        /// </summary>
+        private string Autor => _sessao?.NomeParaAuditoria ?? "Sistema";
         #endregion
 
 
@@ -31,8 +37,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// <summary>
         /// Inicializa uma nova instância de <see cref="ClienteService"/> injetando os repositórios necessários.
         /// </summary>
-        public ClienteService(IClienteRepository clienteRepository, IRegistoRepository registoRepository, IReservaRepository reservaRepository)
+        public ClienteService(IClienteRepository clienteRepository, IRegistoRepository registoRepository, IReservaRepository reservaRepository, ISessionService? sessao = null)
         {
+            _sessao = sessao;
             _clienteRepository = clienteRepository;
             _registoRepository = registoRepository;
             _reservaRepository = reservaRepository;
@@ -93,7 +100,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                 // Auditoria automática
                 _registoRepository.Add(new Registo(0, "Cliente",
                     $"Novo cliente: {novoCliente.Nome} (NIF: {novoCliente.Nif})",
-                    "Sistema", "CREATE", novoCliente.Id, DateTime.Now));
+                    Autor, "CREATE", novoCliente.Id, DateTime.Now));
 
                 mensagem = "Cliente registado com sucesso.";
                 return true;
@@ -124,7 +131,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             {
                 _registoRepository.Add(new Registo(0, "Cliente",
                     $"Atualização cliente ID: {cliente.Id}",
-                    "Sistema", "UPDATE", cliente.Id, DateTime.Now));
+                    Autor, "UPDATE", cliente.Id, DateTime.Now));
 
                 mensagem = "Dados atualizados com sucesso.";
                 return true;
@@ -150,7 +157,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             bool sucesso = _clienteRepository.Remove(id);
             if (sucesso)
             {
-                _registoRepository.Add(new Registo(0, "Cliente", $"Remoção do cliente ID: {id}", "Sistema", "DELETE", id, DateTime.Now));
+                _registoRepository.Add(new Registo(0, "Cliente", $"Remoção do cliente ID: {id}", Autor, "DELETE", id, DateTime.Now));
                 mensagem = "Cliente removido com sucesso.";
             }
             else

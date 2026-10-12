@@ -28,6 +28,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IRegistoRepository _registoRepository;
 
+        private readonly ISessionService? _sessao;
+
+        /// <summary>
+        /// Autor registado na auditoria: o utilizador com sessão iniciada ou "Sistema".
+        /// </summary>
+        private string Autor => _sessao?.NomeParaAuditoria ?? "Sistema";
         #endregion
 
         #region Constructors
@@ -35,8 +41,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// <summary>
         /// Inicializa o serviço injetando as dependências de persistência e auditoria.
         /// </summary>
-        public EmployeeService(IEmployeeRepository employeeRepository, IRegistoRepository registoRepository)
+        public EmployeeService(IEmployeeRepository employeeRepository, IRegistoRepository registoRepository, ISessionService? sessao = null)
         {
+            _sessao = sessao;
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _registoRepository = registoRepository ?? throw new ArgumentNullException(nameof(registoRepository));
         }
@@ -172,7 +179,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                         0,
                         "Employee",
                         $"Funcionário {funcionario.Nome} ({funcionario.Cargo}) guardado.",
-                        "Sistema",
+                        Autor,
                         eNovo ? "CREATE" : "UPDATE",
                         funcionario.Id,
                         DateTime.Now));
@@ -208,7 +215,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             {
                 _registoRepository.Add(new Registo(0, "Employee",
                     $"Funcionário removido: {funcionario.Nome}",
-                    "Sistema", "DELETE", id, DateTime.Now));
+                    Autor, "DELETE", id, DateTime.Now));
 
                 mensagem = "Funcionário removido com sucesso.";
                 return true;

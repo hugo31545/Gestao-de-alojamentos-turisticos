@@ -23,6 +23,7 @@ namespace POOfase1trabalho13_11.ViewModels
 
         private readonly IAuthenticationService _authenticationService;
         private readonly IViewFactory _viewFactory;
+        private readonly ISessionService _sessao;
         private string _username = string.Empty;
         private string _password = string.Empty;
         private string _errorMessage = string.Empty;
@@ -95,9 +96,10 @@ namespace POOfase1trabalho13_11.ViewModels
         /// <summary>
         /// Inicializa a ViewModel injetando os serviços de autenticação e a fábrica de janelas.
         /// </summary>
-        public LoginViewModel(IAuthenticationService authenticationService, IViewFactory viewFactory)
+        public LoginViewModel(IAuthenticationService authenticationService, IViewFactory viewFactory, ISessionService sessao)
         {
             _viewFactory = viewFactory ?? throw new ArgumentNullException(nameof(viewFactory));
+            _sessao = sessao ?? throw new ArgumentNullException(nameof(sessao));
             _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
 
             LoginCommand = new ViewModelCommand(ExecuteLogin, CanExecuteLogin);
@@ -127,6 +129,9 @@ namespace POOfase1trabalho13_11.ViewModels
            
                 if (_authenticationService.UserExists(Username, Password))
                 {
+                    // Guarda o utilizador para a janela principal e para a auditoria
+                    _sessao.Iniciar(Username);
+
                     // Utiliza a fábrica para criar a janela principal sem acoplar a ViewModel a uma classe concreta
                     var mainWindow = _viewFactory.CreateView(ViewType.Main);
 

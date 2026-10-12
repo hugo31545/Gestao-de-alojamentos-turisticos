@@ -5,10 +5,10 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.ViewModels.Services;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
 using POOfase1trabalho13_11.ViewModels.Commands;
 
@@ -21,6 +21,8 @@ namespace POOfase1trabalho13_11.ViewModels
     /// </summary>
     public class AuditoriaViewModel : BaseViewModel
     {
+        private readonly IDialogService _dialog;
+
         #region Fields
         private readonly IRegistoService _registoService;
         private string _filtroGeral = string.Empty;
@@ -79,8 +81,9 @@ namespace POOfase1trabalho13_11.ViewModels
         /// Inicializa uma nova instância da <see cref="AuditoriaViewModel"/> e carrega o histórico inicial.
         /// </summary>
         /// <param name="registoService">Serviço de gestão de registos injetado.</param>
-        public AuditoriaViewModel(IRegistoService registoService)
+        public AuditoriaViewModel(IRegistoService registoService, IDialogService dialogService)
         {
+            _dialog = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _registoService = registoService ?? throw new ArgumentNullException(nameof(registoService));
 
             // Define a ação do comando de atualização
@@ -109,8 +112,7 @@ namespace POOfase1trabalho13_11.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Falha ao ler o histórico: {ex.Message}", "Erro",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialog.Erro($"Falha ao ler o histórico: {ex.Message}", "Erro");
             }
         }
 

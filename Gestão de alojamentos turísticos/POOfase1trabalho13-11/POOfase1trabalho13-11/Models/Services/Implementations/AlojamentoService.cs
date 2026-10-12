@@ -24,6 +24,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         private readonly IAlojamentoRepository _alojamentoRepository;
         private readonly IRegistoRepository _registoRepository;
         private readonly IReservaRepository _reservaRepository;
+        private readonly ISessionService? _sessao;
+
+        /// <summary>
+        /// Autor registado na auditoria: o utilizador com sessão iniciada ou "Sistema".
+        /// </summary>
+        private string Autor => _sessao?.NomeParaAuditoria ?? "Sistema";
         #endregion
 
         #region Constructors
@@ -33,8 +39,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         public AlojamentoService(
             IAlojamentoRepository alojamentoRepository,
             IRegistoRepository registoRepository,
-            IReservaRepository reservaRepository)
+            IReservaRepository reservaRepository, ISessionService? sessao = null)
         {
+            _sessao = sessao;
             _alojamentoRepository = alojamentoRepository;
             _registoRepository = registoRepository;
             _reservaRepository = reservaRepository;
@@ -205,7 +212,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// </summary>
         private void GerarRegisto(string entidade, string acao, string detalhe, int refId)
         {
-            _registoRepository.Add(new Registo(0, entidade, detalhe, "Sistema", acao, refId, DateTime.Now));
+            _registoRepository.Add(new Registo(0, entidade, detalhe, Autor, acao, refId, DateTime.Now));
         }
 
 
