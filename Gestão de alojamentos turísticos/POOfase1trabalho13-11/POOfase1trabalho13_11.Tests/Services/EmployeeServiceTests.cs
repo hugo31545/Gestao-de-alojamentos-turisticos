@@ -96,7 +96,7 @@ namespace POOfase1trabalho13_11.Tests.Services
         public void RemoverFuncionario_Inexistente_RetornaFalse()
         {
             // Arrange
-            _mockEmployeeRepo.Setup(r => r.GetById(It.IsAny<int>())).Returns((Employee)null);
+            _mockEmployeeRepo.Setup(r => r.GetById(It.IsAny<int>())).Returns((Employee?)null);
 
             // Act
             bool resultado = _employeeService.RemoverFuncionario(999, out string mensagem);

@@ -38,7 +38,7 @@ namespace POOfase1trabalho13_11.Tests.Services
         public void RealizarCheckIn_ReservaInexistente_RetornaFalse()
         {
             // Arrange
-            _mockReservaRepo.Setup(r => r.GetById(It.IsAny<int>())).Returns((Reserva)null);
+            _mockReservaRepo.Setup(r => r.GetById(It.IsAny<int>())).Returns((Reserva?)null);
 
             // Act
             bool resultado = _checkInService.RealizarCheckIn(999, "Admin", out string mensagem);

@@ -200,10 +200,15 @@ namespace POOfase1trabalho13_11.ViewModels
             _email = string.Empty;
             _nif = string.Empty;
             _cargo = "Funcionário";
+            _password = string.Empty;
+            _passwordConfirmacao = string.Empty;
             OnPropertyChanged(nameof(Nome));
             OnPropertyChanged(nameof(Email));
             OnPropertyChanged(nameof(NIF));
             OnPropertyChanged(nameof(Cargo));
+            OnPropertyChanged(nameof(Password));
+            OnPropertyChanged(nameof(PasswordConfirmacao));
+            NotificarComandos();
         }
         #endregion
     }

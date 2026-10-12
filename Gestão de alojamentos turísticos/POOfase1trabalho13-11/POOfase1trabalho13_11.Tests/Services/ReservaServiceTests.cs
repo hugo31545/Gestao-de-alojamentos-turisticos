@@ -208,7 +208,7 @@ namespace POOfase1trabalho13_11.Tests.Services
         public void CancelarReserva_Inexistente_RetornaFalse()
         {
             // Arrange
-            _mockReservaRepo.Setup(r => r.GetById(It.IsAny<int>())).Returns((Reserva)null);
+            _mockReservaRepo.Setup(r => r.GetById(It.IsAny<int>())).Returns((Reserva?)null);
 
             // Act
             bool resultado = _reservaService.CancelarReserva(999, "Erro", out string mensagem);

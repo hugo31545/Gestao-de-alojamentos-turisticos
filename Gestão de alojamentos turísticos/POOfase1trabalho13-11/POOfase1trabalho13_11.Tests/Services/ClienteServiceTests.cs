@@ -48,7 +48,7 @@ namespace POOfase1trabalho13_11.Tests.Services
         {
             // Arrange
             var novoCliente = new Cliente { Nif = "999999999", Email = "existente@test.com" };
-            _mockClienteRepo.Setup(r => r.GetByNif(It.IsAny<string>())).Returns((Cliente)null);
+            _mockClienteRepo.Setup(r => r.GetByNif(It.IsAny<string>())).Returns((Cliente?)null);
             
             _mockClienteRepo.Setup(r => r.GetByEmail("existente@test.com")).Returns(new Cliente());
 
@@ -65,8 +65,8 @@ namespace POOfase1trabalho13_11.Tests.Services
         {
             // Arrange
             var novoCliente = new Cliente { Id = 10, Nome = "Joaquim", Nif = "111", Email = "j@t.com" };
-            _mockClienteRepo.Setup(r => r.GetByNif(It.IsAny<string>())).Returns((Cliente)null);
-            _mockClienteRepo.Setup(r => r.GetByEmail(It.IsAny<string>())).Returns((Cliente)null);
+            _mockClienteRepo.Setup(r => r.GetByNif(It.IsAny<string>())).Returns((Cliente?)null);
+            _mockClienteRepo.Setup(r => r.GetByEmail(It.IsAny<string>())).Returns((Cliente?)null);
 
             // Act
             bool resultado = _clienteService.RegistarCliente(novoCliente, out string mensagem);

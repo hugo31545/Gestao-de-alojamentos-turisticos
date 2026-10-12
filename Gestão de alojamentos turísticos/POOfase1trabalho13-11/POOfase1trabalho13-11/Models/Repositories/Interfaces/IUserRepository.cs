@@ -5,6 +5,8 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
+
 namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
 {
     /// <summary>
