@@ -118,6 +118,7 @@ namespace POOfase1trabalho13_11
             services.AddTransient<ClienteViewModel>();
             services.AddTransient<LoginViewModel>();
             services.AddTransient<AuditoriaViewModel>();
+            services.AddTransient<RelatoriosViewModel>();
             services.AddTransient<ReservaViewModel>();
             services.AddTransient<RegistryViewModel>();
             

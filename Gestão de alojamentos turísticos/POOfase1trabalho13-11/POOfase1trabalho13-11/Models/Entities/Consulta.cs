@@ -72,6 +72,18 @@ namespace POOfase1trabalho13_11.Models.Entities
         /// </summary>
         public List<string> Resultados { get; set; } = new();
 
+        /// <summary>
+        /// Parâmetros em texto (ex.: "Inicio=01/10/2026, Fim=12/10/2026"), para apresentação.
+        /// </summary>
+        [JsonIgnore]
+        public string ResumoParametros => string.Join(", ", Parametros.Select(p => $"{p.Key}={p.Value}"));
+
+        /// <summary>
+        /// Resultados em texto, para apresentação.
+        /// </summary>
+        [JsonIgnore]
+        public string ResumoResultados => string.Join("; ", Resultados);
+
         #endregion
 
         #region Constructors

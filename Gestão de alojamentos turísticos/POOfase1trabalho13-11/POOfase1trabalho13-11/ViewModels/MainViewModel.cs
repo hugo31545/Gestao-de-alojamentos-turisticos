@@ -66,6 +66,7 @@ namespace POOfase1trabalho13_11.ViewModels
         public ICommand ShowClientesCommand { get; }
         public ICommand ShowReservasCommand { get; }
         public ICommand ShowAuditoriaCommand { get; }
+        public ICommand ShowRelatoriosCommand { get; }
         public ICommand ShowRegistryCommand { get; }
         public ICommand LogoutCommand { get; }
         #endregion
@@ -88,6 +89,7 @@ namespace POOfase1trabalho13_11.ViewModels
             ShowClientesCommand = new ViewModelCommand(p => Navegar<ClienteViewModel>());
             ShowReservasCommand = new ViewModelCommand(p => Navegar<ReservaViewModel>());
             ShowAuditoriaCommand = new ViewModelCommand(p => Navegar<AuditoriaViewModel>());
+            ShowRelatoriosCommand = new ViewModelCommand(p => Navegar<RelatoriosViewModel>());
            
             ShowRegistryCommand = new ViewModelCommand(p => Navegar<RegistryViewModel>());
 

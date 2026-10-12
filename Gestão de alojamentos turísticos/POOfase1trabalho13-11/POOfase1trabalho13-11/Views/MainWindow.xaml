@@ -20,6 +20,7 @@
             <Button Content="Clientes" Command="{Binding ShowClientesCommand}" Margin="0,5"/>
             <Button Content="Reservas" Command="{Binding ShowReservasCommand}" Margin="0,5"/>
             <Button Content="Auditoria" Command="{Binding ShowAuditoriaCommand}" Margin="0,5"/>
+            <Button Content="Relatórios" Command="{Binding ShowRelatoriosCommand}" Margin="0,5"/>
             
 
             <Separator Margin="0,20"/>

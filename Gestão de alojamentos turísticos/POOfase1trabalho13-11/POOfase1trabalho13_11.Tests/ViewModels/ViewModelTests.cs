@@ -91,6 +91,91 @@ namespace POOfase1trabalho13_11.Tests.ViewModels
     }
 
     [TestFixture]
+    public class RelatoriosViewModelTests
+    {
+        private Mock<IConsultaService> _consulta;
+        private SessionService _sessao;
+        private DialogoFalso _dialogo;
+
+        [SetUp]
+        public void Setup()
+        {
+            _consulta = new Mock<IConsultaService>();
+            _consulta.Setup(c => c.CalcularTaxaOcupacao()).Returns(40.0);
+            _consulta.Setup(c => c.ObterAlojamentosMaisCaros(It.IsAny<int>()))
+                     .Returns(new List<Alojamento> { new Alojamento { Id = 1, Nome = "Suite", PrecoPorNoite = 200 } });
+            _consulta.Setup(c => c.ObterClientesComMaisReservas(It.IsAny<int>()))
+                     .Returns(new List<Cliente> { new Cliente { Id = 1, Nome = "Ana" } });
+            _consulta.Setup(c => c.ObterHistoricoRecente(It.IsAny<int>())).Returns(new List<Consulta>());
+            _sessao = new SessionService();
+            _sessao.Iniciar("ana@ipca.pt");
+            _dialogo = new DialogoFalso();
+        }
+
+        private RelatoriosViewModel CriarVm() => new RelatoriosViewModel(_consulta.Object, _sessao, _dialogo);
+
+        [Test]
+        public void Construtor_CarregaIndicadoresSemRegistarNoHistorico()
+        {
+            var vm = CriarVm();
+
+            Assert.That(vm.TaxaOcupacao, Is.EqualTo(40.0));
+            Assert.That(vm.AlojamentosMaisCaros, Has.Count.EqualTo(1));
+            Assert.That(vm.MelhoresClientes, Has.Count.EqualTo(1));
+            _consulta.Verify(c => c.RegistarPesquisaNoHistorico(It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()), Times.Never);
+        }
+
+        [Test]
+        public void CalcularFaturacao_UsaDiaDeFimCompletoERegistaComUtilizadorDaSessao()
+        {
+            _consulta.Setup(c => c.CalcularFaturacaoTotal(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(350m);
+            var vm = CriarVm();
+            vm.DataInicio = new DateTime(2026, 10, 1);
+            vm.DataFim = new DateTime(2026, 10, 12);
+
+            vm.CalcularFaturacaoCommand.Execute(null);
+
+            Assert.That(vm.FaturacaoTotal, Is.EqualTo(350m));
+            _consulta.Verify(c => c.CalcularFaturacaoTotal(new DateTime(2026, 10, 1),
+                It.Is<DateTime>(f => f.Date == new DateTime(2026, 10, 12) && f.Hour == 23)), Times.Once);
+            _consulta.Verify(c => c.RegistarPesquisaNoHistorico("ana@ipca.pt", "Faturação",
+                It.Is<Dictionary<string, string>>(d => d["Inicio"] == "01/10/2026"), 1), Times.Once);
+        }
+
+        [Test]
+        public void CalcularFaturacao_DataFimAntesDoInicio_ComandoInativo()
+        {
+            var vm = CriarVm();
+            vm.DataInicio = new DateTime(2026, 10, 12);
+            vm.DataFim = new DateTime(2026, 10, 1);
+
+            Assert.IsFalse(vm.CalcularFaturacaoCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void Atualizar_RegistaConsultaNoHistorico()
+        {
+            var vm = CriarVm();
+
+            vm.AtualizarCommand.Execute(null);
+
+            _consulta.Verify(c => c.RegistarPesquisaNoHistorico("ana@ipca.pt", "Indicadores",
+                It.IsAny<Dictionary<string, string>>(), 2), Times.Once);
+        }
+
+        [Test]
+        public void ErroNoServico_MostraErroSemRebentar()
+        {
+            _consulta.Setup(c => c.CalcularTaxaOcupacao()).Throws(new Exception("disco"));
+
+            RelatoriosViewModel? vm = null;
+            Assert.DoesNotThrow(() => vm = CriarVm());
+            Assert.That(_dialogo.Mensagens, Has.Some.Contains("disco"));
+        }
+    }
+
+    [TestFixture]
     public class RegistryViewModelTests
     {
         private Mock<IEmployeeService> _employeeService;

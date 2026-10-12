@@ -20,7 +20,7 @@ Trabalho prático da unidade curricular **Programação Orientada a Objetos** �
 | **Reservas** | Pesquisa de alojamentos livres no período pedido (sem sobreposição de datas), criação, confirmação e cancelamento. O preço total fica guardado na reserva. |
 | **Check-in / Check-out** | O check-in marca o alojamento como Ocupado; o check-out finaliza a reserva e envia o alojamento para Manutenção (limpeza). |
 | **Auditoria** | Cada operação crítica gera um registo com o utilizador que a fez, consultável e filtrável na aplicação. |
-| **Consultas** | Taxa de ocupação, faturação por período, alojamentos mais caros e clientes com mais reservas (`ConsultaService`). |
+| **Relatórios** | Taxa de ocupação, faturação por período, alojamentos mais caros e clientes com mais reservas. Cada consulta fica registada no histórico com o utilizador que a pediu. |
 
 ### Ciclo de vida de uma reserva
 
