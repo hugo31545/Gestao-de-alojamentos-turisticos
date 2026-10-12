@@ -26,6 +26,7 @@ namespace POOfase1trabalho13_11.ViewModels
         private readonly IReservaService _reservaService;
         private readonly IClienteService _clienteService;
         private readonly IAlojamentoService _alojamentoService;
+        private readonly ICheckInService _checkInService;
 
         #endregion
 
@@ -38,8 +39,12 @@ namespace POOfase1trabalho13_11.ViewModels
         private string _motivoCancelamento = string.Empty;
         private Reserva? _reservaSelecionada;
 
-        private bool PodeFazerCheckIn() => ReservaSelecionada?.Estado == EstadoReserva.Confirmada;
-        private bool PodeFazerCheckOut() => ReservaSelecionada?.Estado == EstadoReserva.CheckInRealizado;
+        // Os botões de cada linha passam a própria reserva como parâmetro
+        private Reserva? ReservaAlvo(object? parameter) => parameter as Reserva ?? ReservaSelecionada;
+        private bool PodeConfirmar(object? p) => ReservaAlvo(p)?.Estado == EstadoReserva.Pendente;
+        private bool PodeFazerCheckIn(object? p) => ReservaAlvo(p)?.Estado == EstadoReserva.Confirmada;
+        private bool PodeFazerCheckOut(object? p) => ReservaAlvo(p)?.Estado == EstadoReserva.CheckInRealizado;
+        private bool PodeCancelar(object? p) => ReservaAlvo(p)?.PodeSerCancelada == true;
         #endregion
 
         #region Public Properties
@@ -128,16 +133,23 @@ namespace POOfase1trabalho13_11.ViewModels
 
                 // Reavalia comandos de estado sempre que uma reserva é selecionada na lista
                 (CancelarReservaCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
+                (ConfirmarReservaCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
                 (CheckInCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
                 (CheckOutCommand as ViewModelCommand)?.RaiseCanExecuteChanged();
             }
         }
+
+        /// <summary>
+        /// Nome registado na auditoria como responsável pelo check-in/check-out.
+        /// </summary>
+        private string UtilizadorAtual => "Sistema";
         #endregion
 
 
 
         #region Commands
         public ICommand CriarReservaCommand { get; }
+        public ICommand ConfirmarReservaCommand { get; }
         public ICommand CancelarReservaCommand { get; }
         public ICommand CarregarDadosCommand { get; }
         public ICommand CheckInCommand { get; }
@@ -147,19 +159,21 @@ namespace POOfase1trabalho13_11.ViewModels
         #region Constructor
 
 
-        
-        public ReservaViewModel(IReservaService reservaService, IClienteService clienteService, IAlojamentoService alojamentoService)
+
+        public ReservaViewModel(IReservaService reservaService, IClienteService clienteService, IAlojamentoService alojamentoService, ICheckInService checkInService)
         {
             _reservaService = reservaService;
             _clienteService = clienteService;
             _alojamentoService = alojamentoService;
+            _checkInService = checkInService;
 
-            
+
             CriarReservaCommand = new ViewModelCommand(p => ExecutarCriarReserva(), p => PodeReservar());
-            CancelarReservaCommand = new ViewModelCommand(p => ExecutarCancelar(p), p => true);
+            ConfirmarReservaCommand = new ViewModelCommand(ExecutarConfirmar, PodeConfirmar);
+            CancelarReservaCommand = new ViewModelCommand(ExecutarCancelar, PodeCancelar);
             CarregarDadosCommand = new ViewModelCommand(p => CarregarDados());
-            CheckInCommand = new ViewModelCommand(p => ExecutarCheckIn(p), p => true);
-            CheckOutCommand = new ViewModelCommand(p => ExecutarCheckOut(p), p => true);
+            CheckInCommand = new ViewModelCommand(ExecutarCheckIn, PodeFazerCheckIn);
+            CheckOutCommand = new ViewModelCommand(ExecutarCheckOut, PodeFazerCheckOut);
 
             CarregarDados();
         }
@@ -193,20 +207,29 @@ namespace POOfase1trabalho13_11.ViewModels
 
 
 
-        private void ExecutarCheckIn(object? parameter)
+        private void ExecutarConfirmar(object? parameter)
         {
-            
-            var reserva = parameter as Reserva ?? ReservaSelecionada;
+            var reserva = ReservaAlvo(parameter);
             if (reserva == null) return;
 
-            // Lógica extra: Se estiver Pendente, o sistema confirma-a automaticamente antes do Check-In
-            if (reserva.Estado == EstadoReserva.Pendente)
+            if (_reservaService.ConfirmarReserva(reserva.Id, out string msg))
             {
-                reserva.Estado = EstadoReserva.Confirmada;
-               
+                MessageBox.Show(msg, "Confirmação", MessageBoxButton.OK, MessageBoxImage.Information);
+                CarregarDados();
             }
+            else
+            {
+                MessageBox.Show(msg, "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
 
-            if (_reservaService.EfetuarCheckIn(reserva.Id, out string msg))
+        private void ExecutarCheckIn(object? parameter)
+        {
+            var reserva = ReservaAlvo(parameter);
+            if (reserva == null) return;
+
+            // O CheckInService também marca o alojamento como Ocupado e regista na auditoria
+            if (_checkInService.RealizarCheckIn(reserva.Id, UtilizadorAtual, out string msg))
             {
                 MessageBox.Show(msg, "Check-In", MessageBoxButton.OK, MessageBoxImage.Information);
                 CarregarDados();
@@ -219,10 +242,11 @@ namespace POOfase1trabalho13_11.ViewModels
 
         private void ExecutarCheckOut(object? parameter)
         {
-            var reserva = parameter as Reserva ?? ReservaSelecionada;
+            var reserva = ReservaAlvo(parameter);
             if (reserva == null) return;
 
-            if (_reservaService.EfetuarCheckOut(reserva.Id, out string msg))
+            // Finaliza a reserva (conta para a faturação) e envia o alojamento para manutenção/limpeza
+            if (_checkInService.RealizarCheckOut(reserva.Id, UtilizadorAtual, out string msg))
             {
                 MessageBox.Show(msg, "Check-Out", MessageBoxButton.OK, MessageBoxImage.Information);
                 CarregarDados();
@@ -235,7 +259,7 @@ namespace POOfase1trabalho13_11.ViewModels
 
         private void ExecutarCancelar(object? parameter)
         {
-            var reserva = parameter as Reserva ?? ReservaSelecionada;
+            var reserva = ReservaAlvo(parameter);
             if (reserva == null) return;
 
             if (string.IsNullOrWhiteSpace(MotivoCancelamento))
@@ -249,6 +273,10 @@ namespace POOfase1trabalho13_11.ViewModels
                 MessageBox.Show(msg);
                 MotivoCancelamento = string.Empty;
                 CarregarDados();
+            }
+            else
+            {
+                MessageBox.Show(msg, "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
         private void CarregarDados()

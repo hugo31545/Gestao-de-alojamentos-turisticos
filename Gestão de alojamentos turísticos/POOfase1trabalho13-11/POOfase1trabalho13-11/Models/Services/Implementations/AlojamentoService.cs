@@ -95,9 +95,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         {
            
             bool temReservasAtivas = _reservaRepository.GetAll()
-                .Any(r => r.AlojamentoId == id && r.Estado == EstadoReserva.Confirmada);
+                .Any(r => r.AlojamentoId == id && r.EstaAtiva);
 
-            if (temReservasAtivas) throw new BusinessException("Não é possível remover: Este alojamento possui reservas confirmadas."); ;
+            if (temReservasAtivas) throw new BusinessException("Não é possível remover: Este alojamento possui reservas ativas (pendentes, confirmadas ou com check-in).");
 
             bool sucesso = _alojamentoRepository.Remove(id);
             if (sucesso)
@@ -167,11 +167,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         {
             if (checkIn >= checkOut) return Enumerable.Empty<Alojamento>();
 
-            var disponiveisGeral = _alojamentoRepository.BuscarDisponiveis();
+            // O estado atual (ex.: Ocupado hoje) não impede reservas futuras; só as datas contam
+            var candidatos = _alojamentoRepository.GetAll().Where(a => a.AceitaReservasPara(checkIn));
+            var reservas = _reservaRepository.GetAll().ToList();
 
-            
-            return disponiveisGeral.Where(alojamento =>
-                !_reservaRepository.GetAll().Any(reserva =>
+            return candidatos.Where(alojamento =>
+                !reservas.Any(reserva =>
                     reserva.AlojamentoId == alojamento.Id &&
                     reserva.Estado != EstadoReserva.Cancelada &&
                     checkIn < reserva.DataCheckOut &&

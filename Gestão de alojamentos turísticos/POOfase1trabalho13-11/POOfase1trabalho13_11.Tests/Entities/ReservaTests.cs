@@ -57,6 +57,30 @@ namespace POOfase1trabalho13_11.Tests.Entities
         }
 
         [Test]
+        public void CicloDeVida_PendenteAteFinalizada()
+        {
+            var reserva = new Reserva();
+
+            reserva.Confirmar();
+            reserva.RegistarCheckIn();
+            Assert.IsTrue(reserva.EstaAtiva);
+
+            reserva.RegistarCheckOut();
+            Assert.That(reserva.Estado, Is.EqualTo(EstadoReserva.Finalizada));
+            Assert.IsTrue(reserva.EstaConcluida);
+            Assert.IsFalse(reserva.EstaAtiva);
+        }
+
+        [Test]
+        public void TransicoesInvalidas_LancamInvalidOperationException()
+        {
+            Assert.Throws<InvalidOperationException>(() => new Reserva { Estado = EstadoReserva.Pendente }.RegistarCheckIn());
+            Assert.Throws<InvalidOperationException>(() => new Reserva { Estado = EstadoReserva.Confirmada }.RegistarCheckOut());
+            Assert.Throws<InvalidOperationException>(() => new Reserva { Estado = EstadoReserva.Cancelada }.Confirmar());
+            Assert.Throws<InvalidOperationException>(() => new Reserva { Estado = EstadoReserva.CheckInRealizado }.Cancelar());
+        }
+
+        [Test]
         public void Confirmar_DeveAlterarEstadoParaConfirmada()
         {
             // Arrange

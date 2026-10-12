@@ -71,7 +71,7 @@ namespace POOfase1trabalho13_11.Tests.Services
         {
             // Arrange
             int resId = 1, alojId = 10;
-            var reserva = new Reserva { Id = resId, AlojamentoId = alojId, DataCheckIn = DateTime.Now.AddDays(-1), Estado = EstadoReserva.Confirmada };
+            var reserva = new Reserva { Id = resId, AlojamentoId = alojId, DataCheckIn = DateTime.Now.AddDays(-1), DataCheckOut = DateTime.Now.AddDays(2), Estado = EstadoReserva.Confirmada };
             var alojamento = new Alojamento { Id = alojId, Estado = EstadoAlojamento.Disponivel };
 
             _mockReservaRepo.Setup(r => r.GetById(resId)).Returns(reserva);
@@ -89,6 +89,46 @@ namespace POOfase1trabalho13_11.Tests.Services
             _mockReservaRepo.Verify(r => r.Update(reserva), Times.Once);
             _mockAlojamentoRepo.Verify(r => r.Update(alojamento), Times.Once);
             _mockRegistoRepo.Verify(r => r.Add(It.Is<Registo>(log => log.Operacao == "CHECKIN")), Times.Once);
+        }
+
+        [Test]
+        public void RealizarCheckIn_ReservaPendente_RetornaFalse()
+        {
+            // A reserva tem de ser confirmada antes do check-in
+            var reserva = new Reserva { Id = 1, DataCheckIn = DateTime.Today, DataCheckOut = DateTime.Today.AddDays(2), Estado = EstadoReserva.Pendente };
+            _mockReservaRepo.Setup(r => r.GetById(1)).Returns(reserva);
+
+            bool resultado = _checkInService.RealizarCheckIn(1, "Admin", out string mensagem);
+
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("confirmadas"));
+            Assert.That(reserva.Estado, Is.EqualTo(EstadoReserva.Pendente));
+        }
+
+        [Test]
+        public void RealizarCheckIn_DataSaidaJaPassou_RetornaFalse()
+        {
+            var reserva = new Reserva { Id = 1, DataCheckIn = DateTime.Today.AddDays(-5), DataCheckOut = DateTime.Today.AddDays(-2), Estado = EstadoReserva.Confirmada };
+            _mockReservaRepo.Setup(r => r.GetById(1)).Returns(reserva);
+
+            bool resultado = _checkInService.RealizarCheckIn(1, "Admin", out string mensagem);
+
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("já passou"));
+        }
+
+        [Test]
+        public void RealizarCheckIn_AlojamentoAindaOcupado_RetornaFalse()
+        {
+            var reserva = new Reserva { Id = 1, AlojamentoId = 10, DataCheckIn = DateTime.Today, DataCheckOut = DateTime.Today.AddDays(2), Estado = EstadoReserva.Confirmada };
+            _mockReservaRepo.Setup(r => r.GetById(1)).Returns(reserva);
+            _mockAlojamentoRepo.Setup(r => r.GetById(10)).Returns(new Alojamento { Id = 10, Estado = EstadoAlojamento.Ocupado });
+
+            bool resultado = _checkInService.RealizarCheckIn(1, "Admin", out string mensagem);
+
+            Assert.IsFalse(resultado);
+            Assert.That(reserva.Estado, Is.EqualTo(EstadoReserva.Confirmada));
+            _mockReservaRepo.Verify(r => r.Update(It.IsAny<Reserva>()), Times.Never);
         }
 
         #endregion

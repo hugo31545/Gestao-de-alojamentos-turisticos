@@ -103,8 +103,8 @@ namespace POOfase1trabalho13_11.Tests.Services
         {
             // Arrange
             int alojamentoId = 10;
-            DateTime dataExistenteIn = new DateTime(2025, 12, 20);
-            DateTime dataExistenteOut = new DateTime(2025, 12, 25);
+            DateTime dataExistenteIn = DateTime.Today.AddDays(20);
+            DateTime dataExistenteOut = DateTime.Today.AddDays(25);
 
             _mockClienteRepo.Setup(r => r.GetById(It.IsAny<int>())).Returns(new Cliente());
             _mockAlojamentoRepo.Setup(r => r.GetById(alojamentoId)).Returns(new Alojamento
@@ -119,65 +119,104 @@ namespace POOfase1trabalho13_11.Tests.Services
 
            
             bool resultado = _reservaService.RealizarReserva(1, alojamentoId,
-                new DateTime(2025, 12, 21), new DateTime(2025, 12, 23), 2, out string mensagem);
+                DateTime.Today.AddDays(21), DateTime.Today.AddDays(23), 2, out string mensagem);
 
             // Assert
             Assert.IsFalse(resultado);
             Assert.That(mensagem, Is.EqualTo("O alojamento já está ocupado no período selecionado."));
         }
 
+        [Test]
+        public void RealizarReserva_DataNoPassado_RetornaFalse()
+        {
+            _mockClienteRepo.Setup(r => r.GetById(1)).Returns(new Cliente { Id = 1, Nome = "Teste" });
+            _mockAlojamentoRepo.Setup(r => r.GetById(10)).Returns(new Alojamento { Id = 10, Capacidade = 4 });
+
+            bool resultado = _reservaService.RealizarReserva(1, 10,
+                DateTime.Today.AddDays(-3), DateTime.Today.AddDays(-1), 2, out string mensagem);
+
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("passado"));
+        }
+
+        [Test]
+        public void RealizarReserva_SemHospedes_RetornaFalse()
+        {
+            _mockClienteRepo.Setup(r => r.GetById(1)).Returns(new Cliente { Id = 1, Nome = "Teste" });
+            _mockAlojamentoRepo.Setup(r => r.GetById(10)).Returns(new Alojamento { Id = 10, Capacidade = 4 });
+            _mockReservaRepo.Setup(r => r.GetAll()).Returns(new List<Reserva>());
+
+            bool resultado = _reservaService.RealizarReserva(1, 10,
+                DateTime.Today.AddDays(1), DateTime.Today.AddDays(2), 0, out string mensagem);
+
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("pelo menos um hóspede"));
+        }
+
+        [Test]
+        public void RealizarReserva_AlojamentoOcupadoHoje_PermiteReservaFuturaEGuardaPreco()
+        {
+            // Arrange: Ocupado é o estado atual; não deve bloquear reservas para outras datas
+            Reserva? criada = null;
+            _mockClienteRepo.Setup(r => r.GetById(1)).Returns(new Cliente { Id = 1, Nome = "Teste" });
+            _mockAlojamentoRepo.Setup(r => r.GetById(10)).Returns(new Alojamento
+            { Id = 10, Capacidade = 4, PrecoPorNoite = 50, Estado = EstadoAlojamento.Ocupado });
+            _mockReservaRepo.Setup(r => r.GetAll()).Returns(new List<Reserva>());
+            _mockReservaRepo.Setup(r => r.Add(It.IsAny<Reserva>())).Callback<Reserva>(r => criada = r);
+
+            // Act
+            bool resultado = _reservaService.RealizarReserva(1, 10,
+                DateTime.Today.AddDays(10), DateTime.Today.AddDays(13), 2, out string mensagem);
+
+            // Assert
+            Assert.IsTrue(resultado, mensagem);
+            Assert.That(criada!.PrecoTotal, Is.EqualTo(150m));
+        }
+
+        [Test]
+        public void RealizarReserva_AlojamentoIndisponivel_RetornaFalse()
+        {
+            _mockClienteRepo.Setup(r => r.GetById(1)).Returns(new Cliente { Id = 1, Nome = "Teste" });
+            _mockAlojamentoRepo.Setup(r => r.GetById(10)).Returns(new Alojamento
+            { Id = 10, Capacidade = 4, Estado = EstadoAlojamento.Indisponivel });
+            _mockReservaRepo.Setup(r => r.GetAll()).Returns(new List<Reserva>());
+
+            bool resultado = _reservaService.RealizarReserva(1, 10,
+                DateTime.Today.AddDays(1), DateTime.Today.AddDays(2), 2, out string mensagem);
+
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("não pode receber reservas"));
+        }
+
         #endregion
 
-        #region Testes de Check-In e Check-Out (Continuação)
+        #region Testes de Confirmação
 
         [Test]
-        public void EfetuarCheckIn_ReservaConfirmada_RetornaTrueEAtualizaEstado()
+        public void ConfirmarReserva_Pendente_ConfirmaERegistaNoLog()
         {
-            // Arrange
-            int resId = 1;
-            var reservaConfirmada = new Reserva { Id = resId, Estado = EstadoReserva.Confirmada };
-            _mockReservaRepo.Setup(r => r.GetById(resId)).Returns(reservaConfirmada);
+            var reserva = new Reserva { Id = 1, Estado = EstadoReserva.Pendente };
+            _mockReservaRepo.Setup(r => r.GetById(1)).Returns(reserva);
 
-            // Act
-            bool resultado = _reservaService.EfetuarCheckIn(resId, out string mensagem);
+            bool resultado = _reservaService.ConfirmarReserva(1, out string mensagem);
 
-            // Assert
-            Assert.IsTrue(resultado);
-            Assert.That(reservaConfirmada.Estado, Is.EqualTo(EstadoReserva.CheckInRealizado));
-            _mockReservaRepo.Verify(r => r.Update(reservaConfirmada), Times.Once);
+            Assert.IsTrue(resultado, mensagem);
+            Assert.That(reserva.Estado, Is.EqualTo(EstadoReserva.Confirmada));
+            _mockReservaRepo.Verify(r => r.Update(reserva), Times.Once);
+            _mockRegistoRepo.Verify(r => r.Add(It.Is<Registo>(log => log.Operacao == "CONFIRM")), Times.Once);
         }
 
         [Test]
-        public void EfetuarCheckOut_SemCheckInPrevio_RetornaFalse()
+        public void ConfirmarReserva_JaCancelada_RetornaFalse()
         {
-            // Arrange
-            int resId = 1;
-            var reservaConfirmada = new Reserva { Id = resId, Estado = EstadoReserva.Confirmada };
-            _mockReservaRepo.Setup(r => r.GetById(resId)).Returns(reservaConfirmada);
+            var reserva = new Reserva { Id = 1, Estado = EstadoReserva.Cancelada };
+            _mockReservaRepo.Setup(r => r.GetById(1)).Returns(reserva);
 
-            // Act
-            bool resultado = _reservaService.EfetuarCheckOut(resId, out string mensagem);
+            bool resultado = _reservaService.ConfirmarReserva(1, out string mensagem);
 
-            // Assert
             Assert.IsFalse(resultado);
-            Assert.That(mensagem, Does.Contain("Só pode fazer Check-out de reservas que já fizeram Check-in"));
-        }
-
-        [Test]
-        public void EfetuarCheckOut_DadosValidos_RetornaTrueEAtualizaEstado()
-        {
-            // Arrange
-            int resId = 1;
-            var reservaComCheckIn = new Reserva { Id = resId, Estado = EstadoReserva.CheckInRealizado };
-            _mockReservaRepo.Setup(r => r.GetById(resId)).Returns(reservaComCheckIn);
-
-            // Act
-            bool resultado = _reservaService.EfetuarCheckOut(resId, out string mensagem);
-
-            // Assert
-            Assert.IsTrue(resultado);
-            Assert.That(reservaComCheckIn.Estado, Is.EqualTo(EstadoReserva.CheckOutRealizado));
-            _mockReservaRepo.Verify(r => r.Update(reservaComCheckIn), Times.Once);
+            Assert.That(reserva.Estado, Is.EqualTo(EstadoReserva.Cancelada));
+            _mockReservaRepo.Verify(r => r.Update(It.IsAny<Reserva>()), Times.Never);
         }
 
         #endregion
@@ -202,6 +241,21 @@ namespace POOfase1trabalho13_11.Tests.Services
 
            
             _mockRegistoRepo.Verify(r => r.Add(It.Is<Registo>(log => log.Operacao == "CANCEL")), Times.Once);
+        }
+
+        [TestCase(EstadoReserva.CheckInRealizado)]
+        [TestCase(EstadoReserva.Finalizada)]
+        [TestCase(EstadoReserva.Cancelada)]
+        public void CancelarReserva_EstadoNaoCancelavel_RetornaFalse(EstadoReserva estado)
+        {
+            var reserva = new Reserva { Id = 7, Estado = estado };
+            _mockReservaRepo.Setup(r => r.GetById(7)).Returns(reserva);
+
+            bool resultado = _reservaService.CancelarReserva(7, "Motivo", out string mensagem);
+
+            Assert.IsFalse(resultado);
+            Assert.That(reserva.Estado, Is.EqualTo(estado));
+            _mockReservaRepo.Verify(r => r.Update(It.IsAny<Reserva>()), Times.Never);
         }
 
         [Test]

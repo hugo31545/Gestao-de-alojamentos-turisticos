@@ -22,6 +22,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         #region Fields
         private readonly IClienteRepository _clienteRepository;
         private readonly IRegistoRepository _registoRepository;
+        private readonly IReservaRepository _reservaRepository;
         #endregion
 
 
@@ -30,10 +31,11 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// <summary>
         /// Inicializa uma nova instância de <see cref="ClienteService"/> injetando os repositórios necessários.
         /// </summary>
-        public ClienteService(IClienteRepository clienteRepository, IRegistoRepository registoRepository)
+        public ClienteService(IClienteRepository clienteRepository, IRegistoRepository registoRepository, IReservaRepository reservaRepository)
         {
             _clienteRepository = clienteRepository;
             _registoRepository = registoRepository;
+            _reservaRepository = reservaRepository;
         }
 
         #endregion
@@ -138,7 +140,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// </summary>
         public bool RemoverCliente(int id, out string mensagem)
         {
-            
+            // Não remover clientes com reservas ativas (ficariam reservas sem cliente)
+            if (_reservaRepository.FiltrarPorCliente(id).Any(r => r.EstaAtiva))
+            {
+                mensagem = "Não é possível remover: o cliente tem reservas ativas (pendentes, confirmadas ou com check-in).";
+                return false;
+            }
 
             bool sucesso = _clienteRepository.Remove(id);
             if (sucesso)

@@ -14,6 +14,7 @@ namespace POOfase1trabalho13_11.Tests.Services
     {
         private Mock<IClienteRepository> _mockClienteRepo;
         private Mock<IRegistoRepository> _mockRegistoRepo;
+        private Mock<IReservaRepository> _mockReservaRepo;
         private ClienteService _clienteService;
 
         [SetUp]
@@ -21,7 +22,8 @@ namespace POOfase1trabalho13_11.Tests.Services
         {
             _mockClienteRepo = new Mock<IClienteRepository>();
             _mockRegistoRepo = new Mock<IRegistoRepository>();
-            _clienteService = new ClienteService(_mockClienteRepo.Object, _mockRegistoRepo.Object);
+            _mockReservaRepo = new Mock<IReservaRepository>();
+            _clienteService = new ClienteService(_mockClienteRepo.Object, _mockRegistoRepo.Object, _mockReservaRepo.Object);
         }
 
         #region Testes de Registo
@@ -126,6 +128,22 @@ namespace POOfase1trabalho13_11.Tests.Services
             Assert.IsFalse(resultado);
             Assert.That(mensagem, Does.Contain("não encontrado"));
             _mockRegistoRepo.Verify(r => r.Add(It.IsAny<Registo>()), Times.Never);
+        }
+
+        [Test]
+        public void RemoverCliente_ComReservaAtiva_RetornaFalseSemRemover()
+        {
+            // Arrange
+            _mockReservaRepo.Setup(r => r.FiltrarPorCliente(1))
+                            .Returns(new List<Reserva> { new Reserva { ClienteId = 1, Estado = POOfase1trabalho13_11.Models.Enums.EstadoReserva.Pendente } });
+
+            // Act
+            bool resultado = _clienteService.RemoverCliente(1, out string mensagem);
+
+            // Assert
+            Assert.IsFalse(resultado);
+            Assert.That(mensagem, Does.Contain("reservas ativas"));
+            _mockClienteRepo.Verify(r => r.Remove(It.IsAny<int>()), Times.Never);
         }
 
         [Test]

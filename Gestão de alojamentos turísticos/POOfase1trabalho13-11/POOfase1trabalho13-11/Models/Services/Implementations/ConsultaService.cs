@@ -105,12 +105,15 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// </summary>
         public decimal CalcularFaturacaoTotal(DateTime inicio, DateTime fim)
         {
-            // Soma o preço total de todas as reservas finalizadas no período
+            // Soma o valor das estadias concluídas (check-out) dentro do período
             return _reservaRepo.GetAll()
-                .Where(r => r.Estado == EstadoReserva.Finalizada &&
-                            r.DataReserva >= inicio &&
-                            r.DataReserva <= fim)
+                .Where(r => r.EstaConcluida &&
+                            r.DataCheckOut >= inicio &&
+                            r.DataCheckOut <= fim)
                 .Sum(r => {
+                    // Valor guardado no momento da reserva; reservas antigas usam o preço atual
+                    if (r.PrecoTotal > 0) return r.PrecoTotal;
+
                     var alojamento = _alojamentoRepo.GetById(r.AlojamentoId);
                     if (alojamento == null) return 0;
                     var noites = (r.DataCheckOut - r.DataCheckIn).Days;

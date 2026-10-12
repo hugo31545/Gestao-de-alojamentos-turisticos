@@ -41,20 +41,12 @@ namespace POOfase1trabalho13_11.Models.Services.Interfaces
         #endregion
         #region Operational Flow
         /// <summary>
-        /// Regista o início efetivo da estadia (Check-In).
+        /// Confirma uma reserva pendente. O check-in e o check-out são feitos pelo <see cref="ICheckInService"/>.
         /// </summary>
-        /// <param name="reservaId">ID da reserva confirmada.</param>
+        /// <param name="reservaId">ID da reserva pendente.</param>
         /// <param name="mensagem">Feedback da operação.</param>
-        /// <returns>True se o estado foi alterado com sucesso.</returns>
-        bool EfetuarCheckIn(int reservaId, out string mensagem);
-
-        /// <summary>
-        /// Regista a saída do cliente e finaliza a reserva (Check-Out).
-        /// </summary>
-        /// <param name="reservaId">ID da reserva com check-in ativo.</param>
-        /// <param name="mensagem">Feedback da operação.</param>
-        /// <returns>True se a reserva foi finalizada.</returns>
-        bool EfetuarCheckOut(int reservaId, out string mensagem);
+        /// <returns>True se a reserva foi confirmada.</returns>
+        bool ConfirmarReserva(int reservaId, out string mensagem);
 
         #endregion
 
