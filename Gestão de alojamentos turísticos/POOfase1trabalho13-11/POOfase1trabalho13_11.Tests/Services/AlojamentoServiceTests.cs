@@ -77,6 +77,16 @@ namespace POOfase1trabalho13_11.Tests.Services
         }
 
         [Test]
+        public void GuardarAlojamento_CapacidadeZero_DeveLancarBusinessException()
+        {
+            var alojamento = new Alojamento { Nome = "Suite", PrecoPorNoite = 80, Capacidade = 0 };
+
+            var ex = Assert.Throws<BusinessException>(() => _alojamentoService.GuardarAlojamento(alojamento));
+            Assert.That(ex!.Message, Does.Contain("capacidade"));
+            _mockAlojamentoRepo.Verify(r => r.Save(It.IsAny<Alojamento>()), Times.Never);
+        }
+
+        [Test]
         public void RemoverAlojamento_ComReservaPendente_DeveLancarBusinessException()
         {
             // Arrange: reservas pendentes também ficariam órfãs

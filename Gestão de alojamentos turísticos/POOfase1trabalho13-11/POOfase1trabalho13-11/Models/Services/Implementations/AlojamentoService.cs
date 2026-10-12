@@ -79,6 +79,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             if (alojamento.PrecoPorNoite <= 0)
                 throw new BusinessException("O preço por noite deve ser superior a zero.");
 
+            // Validação de Capacidade e campos obrigatórios
+            if (alojamento.Capacidade <= 0)
+                throw new BusinessException("A capacidade deve ser de pelo menos 1 pessoa.");
+            if (string.IsNullOrWhiteSpace(alojamento.Nome))
+                throw new BusinessException("O nome do alojamento é obrigatório.");
+
             // 2. Determinar tipo de operação para o log
             string operacao = alojamento.Id <= 0 ? "CREATE" : "UPDATE";
 

@@ -12,6 +12,7 @@ using System.Linq;
 using System.Windows.Input;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
+using POOfase1trabalho13_11.Models.Validation;
 using POOfase1trabalho13_11.ViewModels.Commands;
 
 namespace POOfase1trabalho13_11.ViewModels
@@ -148,11 +149,10 @@ namespace POOfase1trabalho13_11.ViewModels
         private bool PodeGravar()
         {
            
+            // Mesmas regras de formato que o ClienteService
             return !string.IsNullOrWhiteSpace(ClienteEmEdicao?.Nome) &&
-                   !string.IsNullOrWhiteSpace(ClienteEmEdicao?.Email) &&
-                   ClienteEmEdicao.Email.Contains("@") &&
-                   !string.IsNullOrWhiteSpace(ClienteEmEdicao?.Nif) &&
-                   ClienteEmEdicao.Nif.Length >= 9;
+                   Validador.EmailValido(ClienteEmEdicao.Email) &&
+                   Validador.NifValido(ClienteEmEdicao.Nif);
         }
 
 

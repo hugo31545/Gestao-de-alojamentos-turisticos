@@ -8,6 +8,7 @@
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
+using POOfase1trabalho13_11.Models.Validation;
 
 namespace POOfase1trabalho13_11.Models.Services.Implementations
 {
@@ -76,6 +77,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// <returns>True se o registo for concluído com sucesso.</returns>
         public bool RegistarCliente(Cliente novoCliente, out string mensagem)
         {
+            // 0. Validação de formato (NIF com 9 dígitos, email válido)
+            if (!ValidarFormato(novoCliente, out mensagem)) return false;
+
             // 1. Validação de Unicidade de NIF
             if (_clienteRepository.GetByNif(novoCliente.Nif) != null)
             {
@@ -118,11 +122,21 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// </summary>
         public bool AtualizarDados(Cliente cliente, out string mensagem)
         {
+            if (!ValidarFormato(cliente, out mensagem)) return false;
+
             // Validação: O NIF pode existir, mas tem de pertencer ao próprio cliente que está a ser editado
             var nifExistente = _clienteRepository.GetByNif(cliente.Nif);
             if (nifExistente != null && nifExistente.Id != cliente.Id)
             {
                 mensagem = "O NIF indicado já pertence a outro cliente.";
+                return false;
+            }
+
+            // O mesmo para o email
+            var emailExistente = _clienteRepository.GetByEmail(cliente.Email);
+            if (emailExistente != null && emailExistente.Id != cliente.Id)
+            {
+                mensagem = "Este endereço de e-mail já pertence a outro cliente.";
                 return false;
             }
 
@@ -145,6 +159,31 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// <summary>
         /// Remove um cliente do sistema e regista a ação na auditoria.
         /// </summary>
+        /// <summary>
+        /// Valida o formato dos dados do cliente (a unicidade é verificada à parte).
+        /// </summary>
+        private static bool ValidarFormato(Cliente? cliente, out string mensagem)
+        {
+            if (cliente == null || string.IsNullOrWhiteSpace(cliente.Nome))
+            {
+                mensagem = "O nome do cliente é obrigatório.";
+                return false;
+            }
+            if (!Validador.NifValido(cliente.Nif))
+            {
+                mensagem = "O NIF deve ter exatamente 9 dígitos.";
+                return false;
+            }
+            if (!Validador.EmailValido(cliente.Email))
+            {
+                mensagem = "O email não tem um formato válido (ex.: nome@dominio.pt).";
+                return false;
+            }
+
+            mensagem = string.Empty;
+            return true;
+        }
+
         public bool RemoverCliente(int id, out string mensagem)
         {
             // Não remover clientes com reservas ativas (ficariam reservas sem cliente)
