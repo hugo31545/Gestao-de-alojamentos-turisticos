@@ -12,10 +12,12 @@ using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Implementations;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using POOfase1trabalho13_11.ViewModels;
+using POOfase1trabalho13_11.ViewModels.Services;
 using POOfase1trabalho13_11.Views;
 using POOfase1trabalho13_11.Views.Enums;
 using POOfase1trabalho13_11.Views.Factories;
 using POOfase1trabalho13_11.Views.Interfaces;
+using POOfase1trabalho13_11.Views.Services;
 using System;
 using System.Windows;
 
@@ -53,10 +55,14 @@ namespace POOfase1trabalho13_11
             // 2. Construir o provedor
             ServiceProvider = services.BuildServiceProvider();
 
-            // 3. Obter a Factory
+            // 3. Mostrar ao utilizador os problemas detetados ao carregar os ficheiros de dados
+            var dialogService = ServiceProvider.GetRequiredService<IDialogService>();
+            AvisosDeDados.AvisoEmitido += aviso => dialogService.Erro(aviso, "Erro de Dados");
+
+            // 4. Obter a Factory
             var viewFactory = ServiceProvider.GetRequiredService<IViewFactory>();
 
-            // 4. FLUXO DE ENTRADA: Abrir sempre o Login primeiro
+            // 5. FLUXO DE ENTRADA: Abrir sempre o Login primeiro
             // A MainWindow só será aberta pela LoginViewModel após sucesso
             var loginWindow = viewFactory.CreateView(ViewType.Login);
             loginWindow.Show();
@@ -73,6 +79,12 @@ namespace POOfase1trabalho13_11
             // --- 0. INFRAESTRUTURA ---
             // A Factory deve ser única para gerir todas as janelas da sessão.
             services.AddSingleton<IViewFactory, ViewFactory>();
+
+            // Caixas de diálogo (as ViewModels não usam MessageBox diretamente)
+            services.AddSingleton<IDialogService, DialogService>();
+
+            // Sessão do utilizador autenticado (partilhada por toda a aplicação)
+            services.AddSingleton<ISessionService, SessionService>();
 
             // --- 1. REPOSITÓRIOS (Data Access) ---
             // Definidos como Singleton para garantir que a cache em memória seja partilhada
@@ -100,13 +112,13 @@ namespace POOfase1trabalho13_11
             services.AddSingleton<IConsultaService, ConsultaService>();
 
             // --- 3. VIEWMODELS & VIEWS ---
-            // MainViewModel e ClienteViewModel como Singleton para manter o estado entre navegações.
-            services.AddSingleton<MainViewModel>();
-            services.AddSingleton<ClienteViewModel>();
-
-            // Transient: Uma nova instância é criada sempre que a janela é aberta (limpa o estado anterior).
+            // Transient: Uma nova instância é criada sempre que a janela/página é aberta,
+            // para que os dados sejam recarregados e não fique estado de uma sessão anterior.
+            services.AddTransient<MainViewModel>();
+            services.AddTransient<ClienteViewModel>();
             services.AddTransient<LoginViewModel>();
             services.AddTransient<AuditoriaViewModel>();
+            services.AddTransient<RelatoriosViewModel>();
             services.AddTransient<ReservaViewModel>();
             services.AddTransient<RegistryViewModel>();
             

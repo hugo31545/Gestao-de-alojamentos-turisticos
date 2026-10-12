@@ -93,15 +93,8 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         {
             try
             {
-                var logsParaRemover = _registoRepo.GetAll()
-                                                .Where(r => r.DataRegisto < dataCorte)
-                                                .ToList();
-
-                int contador = 0;
-                foreach (var log in logsParaRemover)
-                {
-                    if (_registoRepo.Remove(log.Id)) contador++;
-                }
+                // O repositório não permite remover logs individuais; usa a operação de retenção
+                int contador = _registoRepo.RemoverAnterioresA(dataCorte);
 
                 mensagem = $"Limpeza concluída. {contador} registos antigos foram removidos.";
                 return true;

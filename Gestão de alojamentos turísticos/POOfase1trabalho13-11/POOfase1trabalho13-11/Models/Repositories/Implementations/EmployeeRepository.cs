@@ -28,36 +28,6 @@ namespace POOfase1trabalho13_11.Models.Repositories
 
         #endregion
 
-        #region Public Methods
-
-        /// <summary>
-        /// Guarda um funcionário no sistema. Decide automaticamente entre a criação de um novo registo 
-        /// (com atribuição de ID) ou a atualização de um registo existente.
-        /// </summary>
-        /// <param name="employee">O objeto funcionário a persistir.</param>
-        /// <returns>Verdadeiro se a operação for concluída com sucesso; falso caso contrário.</returns>
-        public override bool Save(Employee employee)
-        {
-            if (employee == null) return false;
-
-            // Se o ID for 0 ou não existir na lista, é um novo funcionário
-            if (employee.Id == 0 || GetById(employee.Id) == null)
-            {
-                // Garante a geração de ID se for 0
-                if (employee.Id == 0)
-                {
-                    employee.Id = Items.Any() ? Items.Max(e => e.Id) + 1 : 1;
-                }
-                Add(employee); 
-                return true;
-            }
-
-            return Update(employee); 
-        }
-
-
-
-        #endregion
 
         #region Specific Logic (Exemplo)
 

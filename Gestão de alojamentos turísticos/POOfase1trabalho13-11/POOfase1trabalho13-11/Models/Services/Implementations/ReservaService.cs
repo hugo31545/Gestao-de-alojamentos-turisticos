@@ -25,6 +25,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         private readonly IAlojamentoRepository _alojamentoRepo;
         private readonly IClienteRepository _clienteRepo;
         private readonly IRegistoRepository _registoRepo;
+        private readonly ISessionService? _sessao;
+
+        /// <summary>
+        /// Autor registado na auditoria: o utilizador com sessão iniciada ou "Sistema".
+        /// </summary>
+        private string Autor => _sessao?.NomeParaAuditoria ?? "Sistema";
         #endregion
 
         #region Constructors
@@ -35,8 +41,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             IReservaRepository reservaRepo,
             IAlojamentoRepository alojamentoRepo,
             IClienteRepository clienteRepo,
-            IRegistoRepository registoRepo)
+            IRegistoRepository registoRepo, ISessionService? sessao = null)
         {
+            _sessao = sessao;
             _reservaRepo = reservaRepo;
             _alojamentoRepo = alojamentoRepo;
             _clienteRepo = clienteRepo;
@@ -60,6 +67,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
 
             // 2. Validação de Datas
             if (checkIn >= checkOut) { mensagem = "Data de Check-In deve ser anterior ao Check-Out."; return false; }
+            if (checkIn.Date < DateTime.Today) { mensagem = "Não é possível criar reservas com data de entrada no passado."; return false; }
 
             // 3. Validação de Disponibilidade (Conflito de Calendário)
             if (ExisteConflitoDeDatas(alojamentoId, checkIn, checkOut))
@@ -68,18 +76,20 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                 return false;
             }
 
-
-            if (alojamento.Estado != EstadoAlojamento.Disponivel)
+            // O estado atual (ex.: Ocupado) não impede reservas futuras; a ocupação é verificada pelas datas
+            if (!alojamento.AceitaReservasPara(checkIn))
             {
-                mensagem = $"O alojamento não pode receber reservas (Estado: {alojamento.Estado}).";
+                mensagem = $"O alojamento não pode receber reservas para esta data (Estado: {alojamento.Estado}).";
                 return false;
             }
 
+            if (numHospedes <= 0) { mensagem = "A reserva deve ter pelo menos um hóspede."; return false; }
             if (numHospedes > alojamento.Capacidade) { mensagem = "Número de hóspedes excede a capacidade."; return false; }
 
             try
             {
-                // Criar a Entidade
+                // Criar a Entidade, guardando o valor da estadia ao preço atual
+                int noites = Math.Max(1, (checkOut.Date - checkIn.Date).Days);
                 var novaReserva = new Reserva(
                     0,
                     clienteId,
@@ -90,7 +100,10 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                     "Reserva criada via sistema",
                     EstadoReserva.Pendente,
                     DateTime.Now
-                );
+                )
+                {
+                    PrecoTotal = noites * alojamento.PrecoPorNoite
+                };
 
                 //  Persistência
                 _reservaRepo.Add(novaReserva);
@@ -100,7 +113,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                     0,
                     "Reserva",
                     $"Nova reserva ID {novaReserva.Id} para o cliente {cliente.Nome}",
-                    "Sistema",
+                    Autor,
                     "CREATE",
                     novaReserva.Id,
                     DateTime.Now
@@ -125,57 +138,44 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             var reserva = _reservaRepo.GetById(reservaId);
             if (reserva == null) { mensagem = "Reserva não encontrada."; return false; }
 
+            if (!reserva.PodeSerCancelada)
+            {
+                mensagem = $"Não é possível cancelar uma reserva no estado {reserva.Estado}.";
+                return false;
+            }
+
             reserva.Cancelar();
             reserva.Observacoes += $" | Cancelamento: {motivo}";
 
             _reservaRepo.Update(reserva);
 
-            _registoRepo.Add(new Registo(0, "Reserva", motivo, "Sistema", "CANCEL", reservaId, DateTime.Now));
+            _registoRepo.Add(new Registo(0, "Reserva", motivo, Autor, "CANCEL", reservaId, DateTime.Now));
 
             mensagem = "Reserva cancelada com sucesso.";
             return true;
         }
 
 
-
         /// <summary>
-        /// Atualiza o estado da reserva para Check-In realizado.
+        /// Confirma uma reserva pendente e regista a operação na auditoria.
         /// </summary>
-        public bool EfetuarCheckIn(int reservaId, out string mensagem)
+        public bool ConfirmarReserva(int reservaId, out string mensagem)
         {
             var reserva = _reservaRepo.GetById(reservaId);
             if (reserva == null) { mensagem = "Reserva não encontrada."; return false; }
 
-            if (reserva.Estado != EstadoReserva.Confirmada)
+            if (reserva.Estado != EstadoReserva.Pendente)
             {
-                mensagem = "Só pode fazer Check-in de reservas já Confirmadas.";
+                mensagem = $"Só é possível confirmar reservas pendentes (estado atual: {reserva.Estado}).";
                 return false;
             }
 
-            reserva.Estado = EstadoReserva.CheckInRealizado;
+            reserva.Confirmar();
             _reservaRepo.Update(reserva);
-            mensagem = "Check-in efetuado com sucesso!";
-            return true;
-        }
 
+            _registoRepo.Add(new Registo(0, "Reserva", $"Reserva {reservaId} confirmada", Autor, "CONFIRM", reservaId, DateTime.Now));
 
-        /// <summary>
-        /// Finaliza a reserva após o Check-Out.
-        /// </summary>
-        public bool EfetuarCheckOut(int reservaId, out string mensagem)
-        {
-            var reserva = _reservaRepo.GetById(reservaId);
-            if (reserva == null) { mensagem = "Reserva não encontrada."; return false; }
-
-            if (reserva.Estado != EstadoReserva.CheckInRealizado)
-            {
-                mensagem = "Só pode fazer Check-out de reservas que já fizeram Check-in.";
-                return false;
-            }
-
-            reserva.Estado = EstadoReserva.CheckOutRealizado;
-            _reservaRepo.Update(reserva);
-            mensagem = "Check-out efetuado com sucesso!";
+            mensagem = "Reserva confirmada com sucesso.";
             return true;
         }
 

@@ -40,6 +40,17 @@ namespace POOfase1trabalho13_11.Models.Services.Interfaces
         /// <param name="nif">O número de identificação fiscal a validar.</param>
         /// <returns>True se o NIF já existir no sistema.</returns>
         bool VerificarNifDuplicado(string nif);
+
+        /// <summary>
+        /// Valida os dados de um novo funcionário antes de qualquer gravação:
+        /// campos obrigatórios, formato do NIF e do email, e unicidade de NIF e email.
+        /// </summary>
+        /// <param name="nome">Nome do funcionário.</param>
+        /// <param name="email">Email (também usado como nome de utilizador).</param>
+        /// <param name="nif">NIF com 9 dígitos.</param>
+        /// <param name="mensagem">Motivo da falha, se existir.</param>
+        /// <returns>True se os dados forem válidos.</returns>
+        bool ValidarNovoFuncionario(string nome, string email, string nif, out string mensagem);
         #endregion
 
         #region Write Operations

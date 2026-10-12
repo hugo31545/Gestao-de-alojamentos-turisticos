@@ -29,8 +29,16 @@ namespace POOfase1trabalho13_11.Models.Services.Interfaces
         /// <param name="username">Nome de utilizador pretendido.</param>
         /// <param name="password">Palavra-passe.</param>
         /// <param name="passwordRepeat">Confirmação da palavra-passe.</param>
+        /// <param name="mensagem">Motivo da falha, ou mensagem de sucesso.</param>
         /// <returns>True se o utilizador foi criado com sucesso.</returns>
-        bool CreateUser(string username, string password, string passwordRepeat);
+        bool CreateUser(string username, string password, string passwordRepeat, out string mensagem);
+
+        /// <summary>
+        /// Remove a conta de um utilizador (por exemplo, para desfazer um registo incompleto).
+        /// </summary>
+        /// <param name="username">Nome de utilizador a remover.</param>
+        /// <returns>True se a conta existia e foi removida.</returns>
+        bool RemoveUser(string username);
 
         #endregion
     }

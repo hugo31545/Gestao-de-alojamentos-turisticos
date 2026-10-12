@@ -24,6 +24,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         private readonly IAlojamentoRepository _alojamentoRepository;
         private readonly IRegistoRepository _registoRepository;
         private readonly IReservaRepository _reservaRepository;
+        private readonly ISessionService? _sessao;
+
+        /// <summary>
+        /// Autor registado na auditoria: o utilizador com sessão iniciada ou "Sistema".
+        /// </summary>
+        private string Autor => _sessao?.NomeParaAuditoria ?? "Sistema";
         #endregion
 
         #region Constructors
@@ -33,8 +39,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         public AlojamentoService(
             IAlojamentoRepository alojamentoRepository,
             IRegistoRepository registoRepository,
-            IReservaRepository reservaRepository)
+            IReservaRepository reservaRepository, ISessionService? sessao = null)
         {
+            _sessao = sessao;
             _alojamentoRepository = alojamentoRepository;
             _registoRepository = registoRepository;
             _reservaRepository = reservaRepository;
@@ -72,6 +79,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             if (alojamento.PrecoPorNoite <= 0)
                 throw new BusinessException("O preço por noite deve ser superior a zero.");
 
+            // Validação de Capacidade e campos obrigatórios
+            if (alojamento.Capacidade <= 0)
+                throw new BusinessException("A capacidade deve ser de pelo menos 1 pessoa.");
+            if (string.IsNullOrWhiteSpace(alojamento.Nome))
+                throw new BusinessException("O nome do alojamento é obrigatório.");
+
             // 2. Determinar tipo de operação para o log
             string operacao = alojamento.Id <= 0 ? "CREATE" : "UPDATE";
 
@@ -95,9 +108,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         {
            
             bool temReservasAtivas = _reservaRepository.GetAll()
-                .Any(r => r.AlojamentoId == id && r.Estado == EstadoReserva.Confirmada);
+                .Any(r => r.AlojamentoId == id && r.EstaAtiva);
 
-            if (temReservasAtivas) throw new BusinessException("Não é possível remover: Este alojamento possui reservas confirmadas."); ;
+            if (temReservasAtivas) throw new BusinessException("Não é possível remover: Este alojamento possui reservas ativas (pendentes, confirmadas ou com check-in).");
 
             bool sucesso = _alojamentoRepository.Remove(id);
             if (sucesso)
@@ -167,11 +180,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         {
             if (checkIn >= checkOut) return Enumerable.Empty<Alojamento>();
 
-            var disponiveisGeral = _alojamentoRepository.BuscarDisponiveis();
+            // O estado atual (ex.: Ocupado hoje) não impede reservas futuras; só as datas contam
+            var candidatos = _alojamentoRepository.GetAll().Where(a => a.AceitaReservasPara(checkIn));
+            var reservas = _reservaRepository.GetAll().ToList();
 
-            
-            return disponiveisGeral.Where(alojamento =>
-                !_reservaRepository.GetAll().Any(reserva =>
+            return candidatos.Where(alojamento =>
+                !reservas.Any(reserva =>
                     reserva.AlojamentoId == alojamento.Id &&
                     reserva.Estado != EstadoReserva.Cancelada &&
                     checkIn < reserva.DataCheckOut &&
@@ -204,7 +218,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// </summary>
         private void GerarRegisto(string entidade, string acao, string detalhe, int refId)
         {
-            _registoRepository.Add(new Registo(0, entidade, detalhe, "Sistema", acao, refId, DateTime.Now));
+            _registoRepository.Add(new Registo(0, entidade, detalhe, Autor, acao, refId, DateTime.Now));
         }
 
 

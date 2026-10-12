@@ -5,6 +5,7 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 
 namespace POOfase1trabalho13_11.Models.Repositories.Implementations
@@ -45,27 +46,23 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         /// Cria um novo utilizador, atribui um ID único e persiste os dados no ficheiro JSON.
         /// </summary>
         /// <param name="username">Nome de utilizador pretendido.</param>
-        /// <param name="password">Palavra-passe (deve ser tratada com hash em produção).</param>
+        /// <param name="passwordHash">O hash da palavra-passe (nunca o texto simples).</param>
         /// <returns>True se o utilizador foi criado com sucesso; False se o nome de utilizador já existir.</returns>
-        public bool CreateUser(string username, string password)
+        public bool CreateUser(string username, string passwordHash)
         {
             // 1. Validação de Unicidade: impede a criação de usernames duplicados
             if (GetUserByUsername(username) != null)
                 return false;
 
-            // 2. Gerar ID de auto-incremento
-            int novoId = Items.Any() ? Items.Max(u => u.Id) + 1 : 1;
-
-            // 3. Instanciar o novo objeto User
+            // 2. Instanciar o novo objeto User (o ID é gerado pela classe base no Add)
             var novoUser = new User
             {
-                Id = novoId,
                 Username = username,
-                Password = password,
+                PasswordHash = passwordHash,
                 DataRegisto = DateTime.Now
             };
 
-            // 4. Adicionar à lista e disparar a gravação física no ficheiro via classe base
+            // 3. Adicionar à lista e disparar a gravação física no ficheiro via classe base
             Add(novoUser);
 
             return true;

@@ -182,5 +182,22 @@ namespace POOfase1trabalho13_11.Models.Entities
         }
         #endregion
 
+        #region Logic Methods
+        /// <summary>
+        /// Indica se o alojamento pode receber uma reserva com entrada na data indicada.
+        /// O estado <see cref="Estado"/> descreve o momento atual: um alojamento <c>Ocupado</c>
+        /// pode ser reservado para datas futuras (os conflitos de datas são verificados à parte),
+        /// e um alojamento em <c>Manutencao</c> só não aceita entradas para hoje.
+        /// Um alojamento <c>Indisponivel</c> não aceita reservas.
+        /// </summary>
+        /// <param name="checkIn">A data de entrada pretendida.</param>
+        /// <returns><c>true</c> se a reserva for permitida.</returns>
+        public bool AceitaReservasPara(DateTime checkIn) => Estado switch
+        {
+            EstadoAlojamento.Indisponivel => false,
+            EstadoAlojamento.Manutencao => checkIn.Date > DateTime.Today,
+            _ => true
+        };
+        #endregion
     }
 }

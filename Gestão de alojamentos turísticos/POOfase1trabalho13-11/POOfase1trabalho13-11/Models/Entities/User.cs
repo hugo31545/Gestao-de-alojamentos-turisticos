@@ -7,32 +7,43 @@
 //-----------------------------------------------------------------
 
 using POOfase1trabalho13_11.Models.Entities.Interfaces;
+using System.Text.Json.Serialization;
 
-/// <summary>
-/// Representa as credenciais de acesso de um utilizador ao sistema.
-/// Esta classe armazena os dados necessários para o processo de autenticação.
-/// Implementa a interface <see cref="IEntity"/>.
-/// </summary>
-public class User : IEntity
+namespace POOfase1trabalho13_11.Models.Entities
 {
-
     /// <summary>
-    /// Obtém ou define o identificador único do utilizador.
+    /// Representa as credenciais de acesso de um utilizador ao sistema.
+    /// Esta classe armazena os dados necessários para o processo de autenticação.
+    /// Implementa a interface <see cref="IEntity"/>.
     /// </summary>
-    public int Id { get; set; }
+    public class User : IEntity
+    {
 
-    /// <summary>
-    /// Obtém ou define o nome de utilizador.
-    /// </summary>
-    public string Username { get; set; } = string.Empty;
+        /// <summary>
+        /// Obtém ou define o identificador único do utilizador.
+        /// </summary>
+        public int Id { get; set; }
 
-    /// <summary>
-    /// Obtém ou define a palavra-passe do utilizador.
-    /// </summary>
-    public string Password { get; set; } = string.Empty;
+        /// <summary>
+        /// Obtém ou define o nome de utilizador.
+        /// </summary>
+        public string Username { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Obtém ou define a data e hora em que a conta de utilizador foi criada.
-    /// </summary>
-    public DateTime DataRegisto { get; set; }
+        /// <summary>
+        /// Obtém ou define o hash da palavra-passe (formato de <c>PasswordHasher</c>).
+        /// </summary>
+        public string PasswordHash { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Palavra-passe em texto simples de contas antigas. Só é lida para migração:
+        /// é apagada no primeiro login correto e deixa de ser escrita no ficheiro.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Password { get; set; }
+
+        /// <summary>
+        /// Obtém ou define a data e hora em que a conta de utilizador foi criada.
+        /// </summary>
+        public DateTime DataRegisto { get; set; }
+    }
 }

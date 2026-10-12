@@ -109,6 +109,24 @@ namespace POOfase1trabalho13_11.Tests.Services
             Assert.That(total, Is.EqualTo(200m));
         }
 
+        [Test]
+        public void CalcularFaturacaoTotal_UsaPrecoGuardadoNaReserva()
+        {
+            // Arrange: a reserva foi feita a 80€/noite; o preço atual subiu para 150€
+            DateTime inicio = new DateTime(2023, 01, 01);
+            DateTime fim = new DateTime(2023, 12, 31);
+            var reserva = new Reserva(1, 1, 1, inicio, inicio.AddDays(2), 2, "", EstadoReserva.Finalizada, inicio) { PrecoTotal = 160m };
+
+            _mockReservaRepo.Setup(r => r.GetAll()).Returns(new List<Reserva> { reserva });
+            _mockAlojamentoRepo.Setup(r => r.GetById(1)).Returns(new Alojamento { PrecoPorNoite = 150 });
+
+            // Act
+            decimal total = _consultaService.CalcularFaturacaoTotal(inicio, fim);
+
+            // Assert
+            Assert.That(total, Is.EqualTo(160m));
+        }
+
         #endregion
 
         #region Testes de Clientes e Histórico

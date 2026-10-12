@@ -75,6 +75,13 @@ namespace POOfase1trabalho13_11.Models.Entities
         public string Observacoes { get; set; } = string.Empty;
 
         /// <summary>
+        /// Obtém ou define o valor total da estadia, calculado no momento da reserva.
+        /// Guardar o valor evita que alterações futuras ao preço do alojamento mudem a faturação.
+        /// Reservas antigas têm 0 (o valor é então calculado com o preço atual).
+        /// </summary>
+        public decimal PrecoTotal { get; set; }
+
+        /// <summary>
         /// Obtém ou define o estado atual da reserva (ex: Pendente, Confirmada, Cancelada).
         /// </summary>
         public EstadoReserva Estado
@@ -126,14 +133,74 @@ namespace POOfase1trabalho13_11.Models.Entities
 
         #region Logic Methods
         /// <summary>
-        /// Altera o estado da reserva para Confirmada.
+        /// Indica se a reserva ainda ocupa o alojamento (pendente, confirmada ou com check-in feito).
         /// </summary>
-        public void Confirmar() => Estado = EstadoReserva.Confirmada;
+        [JsonIgnore]
+        public bool EstaAtiva =>
+            Estado == EstadoReserva.Pendente ||
+            Estado == EstadoReserva.Confirmada ||
+            Estado == EstadoReserva.CheckInRealizado;
+
+        /// <summary>
+        /// Indica se a estadia já terminou. Inclui <see cref="EstadoReserva.CheckOutRealizado"/>,
+        /// usado por reservas antigas antes de o fluxo passar a terminar em <see cref="EstadoReserva.Finalizada"/>.
+        /// </summary>
+        [JsonIgnore]
+        public bool EstaConcluida =>
+            Estado == EstadoReserva.Finalizada ||
+            Estado == EstadoReserva.CheckOutRealizado;
+
+        /// <summary>
+        /// Indica se a reserva ainda pode ser cancelada (antes do check-in).
+        /// </summary>
+        [JsonIgnore]
+        public bool PodeSerCancelada =>
+            Estado == EstadoReserva.Pendente ||
+            Estado == EstadoReserva.Confirmada;
+
+        /// <summary>
+        /// Altera o estado da reserva de Pendente para Confirmada.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Se a reserva não estiver pendente.</exception>
+        public void Confirmar()
+        {
+            if (Estado != EstadoReserva.Pendente)
+                throw new InvalidOperationException($"Só é possível confirmar reservas pendentes (estado atual: {Estado}).");
+            Estado = EstadoReserva.Confirmada;
+        }
 
         /// <summary>
         /// Altera o estado da reserva para Cancelada.
         /// </summary>
-        public void Cancelar() => Estado = EstadoReserva.Cancelada;
+        /// <exception cref="InvalidOperationException">Se o check-in já foi feito ou a reserva já terminou.</exception>
+        public void Cancelar()
+        {
+            if (!PodeSerCancelada)
+                throw new InvalidOperationException($"Não é possível cancelar uma reserva no estado {Estado}.");
+            Estado = EstadoReserva.Cancelada;
+        }
+
+        /// <summary>
+        /// Regista o check-in: Confirmada → CheckInRealizado.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Se a reserva não estiver confirmada.</exception>
+        public void RegistarCheckIn()
+        {
+            if (Estado != EstadoReserva.Confirmada)
+                throw new InvalidOperationException($"Só é possível fazer check-in de reservas confirmadas (estado atual: {Estado}).");
+            Estado = EstadoReserva.CheckInRealizado;
+        }
+
+        /// <summary>
+        /// Regista o check-out: CheckInRealizado → Finalizada.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Se o check-in ainda não foi feito.</exception>
+        public void RegistarCheckOut()
+        {
+            if (Estado != EstadoReserva.CheckInRealizado)
+                throw new InvalidOperationException($"Só é possível fazer check-out de reservas com check-in feito (estado atual: {Estado}).");
+            Estado = EstadoReserva.Finalizada;
+        }
 
         /// <summary>
         /// Devolve uma representação textual simplificada da reserva.

@@ -61,17 +61,6 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         /// <returns>Coleção de reservas pendentes.</returns>
         public IEnumerable<Reserva> BuscarPendentes() =>
             Items.Where(r => r.Estado == EstadoReserva.Pendente);
-
-        /// <summary>
-        /// Adiciona uma nova reserva ao sistema, garantindo a atribuição de um ID único incremental.
-        /// </summary>
-        /// <param name="reserva">O objeto de reserva a adicionar.</param>
-        public override void Add(Reserva reserva)
-        {
-            if (reserva.Id <= 0)
-                reserva.Id = Items.Any() ? Items.Max(r => r.Id) + 1 : 1;
-            base.Add(reserva);
-        }
         #endregion
     }
 }

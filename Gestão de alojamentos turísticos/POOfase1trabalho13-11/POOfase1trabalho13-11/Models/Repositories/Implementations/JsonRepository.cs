@@ -9,7 +9,6 @@ using POOfase1trabalho13_11.Models.Entities.Interfaces;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using System.IO;
 using System.Text.Json;
-using System.Windows;
 
 namespace POOfase1trabalho13_11.Models.Repositories.Implementations 
 {
@@ -25,9 +24,9 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
         #region Fields
 
         /// <summary>
-        /// Caminho base para a pasta de dados da aplicação.
+        /// Caminho base para a pasta de dados da aplicação (ver <see cref="ConfiguracaoDados"/>).
         /// </summary>
-        private readonly string _basePath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data"));
+        private readonly string _basePath = ConfiguracaoDados.Diretorio;
 
         /// <summary>
         /// Caminho completo para o ficheiro JSON específico desta entidade.
@@ -114,13 +113,43 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
             {
                 
                 System.Diagnostics.Debug.WriteLine($"ERRO DE FORMATO JSON: {jex.Message}");
-                MessageBox.Show($"Erro de formato no ficheiro {Path.GetFileName(_filePath)}. O ficheiro pode estar corrompido.", "Erro de Dados");
+                string? copia = PreservarFicheiroDanificado();
+                AvisosDeDados.Emitir($"Erro de formato no ficheiro {Path.GetFileName(_filePath)}. O ficheiro pode estar corrompido." +
+                                     (copia != null ? $"\nFoi guardada uma cópia em {Path.GetFileName(copia)}." : string.Empty));
                 Items = new List<TEntity>();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ERRO CRÍTICO: {ex.Message}");
+                string? copia = PreservarFicheiroDanificado();
+                AvisosDeDados.Emitir($"Não foi possível ler o ficheiro {Path.GetFileName(_filePath)}: {ex.Message}" +
+                                     (copia != null ? $"\nFoi guardada uma cópia em {Path.GetFileName(copia)}." : string.Empty));
                 Items = new List<TEntity>();
+            }
+        }
+
+        /// <summary>
+        /// Copia um ficheiro que não foi possível ler para <c>nome.corrupt-AAAAMMDD-HHMMSS.json</c>,
+        /// para que a próxima gravação (com a lista vazia) não apague os dados originais.
+        /// </summary>
+        /// <returns>O caminho da cópia, ou <c>null</c> se não foi possível criá-la.</returns>
+        private string? PreservarFicheiroDanificado()
+        {
+            try
+            {
+                if (!File.Exists(_filePath)) return null;
+
+                string copia = Path.Combine(
+                    Path.GetDirectoryName(_filePath)!,
+                    $"{Path.GetFileNameWithoutExtension(_filePath)}.corrupt-{DateTime.Now:yyyyMMdd-HHmmss}{Path.GetExtension(_filePath)}");
+
+                File.Copy(_filePath, copia, overwrite: false);
+                return copia;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Não foi possível copiar o ficheiro danificado: {ex.Message}");
+                return null;
             }
         }
 
@@ -192,12 +221,29 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 
         /// <summary>
         /// Adiciona uma nova entidade à lista e sincroniza com o ficheiro.
+        /// Se o ID for 0 (ou negativo) é gerado automaticamente (maior ID + 1).
+        /// Se a gravação falhar, a entidade é retirada da memória.
         /// </summary>
+        /// <exception cref="InvalidOperationException">Se já existir uma entidade com o mesmo ID.</exception>
         public virtual void Add(TEntity entity)
         {
-            
+            ArgumentNullException.ThrowIfNull(entity);
+
+            if (entity.Id <= 0)
+                entity.Id = Items.Any() ? Items.Max(x => x.Id) + 1 : 1;
+            else if (Items.Any(x => x.Id == entity.Id))
+                throw new InvalidOperationException($"O ID {entity.Id} já está em uso.");
+
             Items.Add(entity);
-            SaveToFile();
+            try
+            {
+                SaveToFile();
+            }
+            catch
+            {
+                Items.Remove(entity);
+                throw;
+            }
         }
 
         /// <summary>
@@ -220,8 +266,17 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 
             if (index != -1)
             {
+                TEntity anterior = Items[index];
                 Items[index] = entity;
-                SaveToFile(); // Só acede ao disco para gravar
+                try
+                {
+                    SaveToFile(); // Só acede ao disco para gravar
+                }
+                catch
+                {
+                    Items[index] = anterior;
+                    throw;
+                }
                 return true;
             }
             return false;
@@ -229,18 +284,25 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 
         /// <summary>
         /// Remove uma entidade do sistema através do seu ID e atualiza o ficheiro.
+        /// Se a gravação falhar, a entidade volta a ser colocada na lista.
         /// </summary>
         public virtual bool Remove(int id)
         {
-            
-            int removedCount = Items.RemoveAll(x => x.Id == id);
+            int index = Items.FindIndex(x => x.Id == id);
+            if (index == -1) return false;
 
-            if (removedCount > 0)
+            TEntity removida = Items[index];
+            Items.RemoveAt(index);
+            try
             {
                 SaveToFile();
-                return true;
             }
-            return false;
+            catch
+            {
+                Items.Insert(index, removida);
+                throw;
+            }
+            return true;
         }
 
         

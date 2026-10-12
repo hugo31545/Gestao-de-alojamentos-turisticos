@@ -76,9 +76,50 @@ namespace POOfase1trabalho13_11.Tests.Services
             _mockAlojamentoRepo.Verify(r => r.Remove(alojId), Times.Never);
         }
 
+        [Test]
+        public void GuardarAlojamento_CapacidadeZero_DeveLancarBusinessException()
+        {
+            var alojamento = new Alojamento { Nome = "Suite", PrecoPorNoite = 80, Capacidade = 0 };
+
+            var ex = Assert.Throws<BusinessException>(() => _alojamentoService.GuardarAlojamento(alojamento));
+            Assert.That(ex!.Message, Does.Contain("capacidade"));
+            _mockAlojamentoRepo.Verify(r => r.Save(It.IsAny<Alojamento>()), Times.Never);
+        }
+
+        [Test]
+        public void RemoverAlojamento_ComReservaPendente_DeveLancarBusinessException()
+        {
+            // Arrange: reservas pendentes também ficariam órfãs
+            int alojId = 1;
+            _mockReservaRepo.Setup(r => r.GetAll()).Returns(new List<Reserva>
+            {
+                new Reserva { AlojamentoId = alojId, Estado = EstadoReserva.Pendente }
+            });
+
+            // Act & Assert
+            Assert.Throws<BusinessException>(() => _alojamentoService.RemoverAlojamento(alojId));
+            _mockAlojamentoRepo.Verify(r => r.Remove(alojId), Times.Never);
+        }
+
         #endregion
 
         #region Testes de Lógica de Datas e Disponibilidade
+
+        [Test]
+        public void BuscarDisponiveisPorPeriodo_AlojamentoOcupadoHoje_DisponivelNoFuturo()
+        {
+            // Arrange: o alojamento está Ocupado agora, mas não tem reservas para o período pedido
+            var alojamento = new Alojamento { Id = 1, Nome = "Quarto 101", Estado = EstadoAlojamento.Ocupado };
+            var indisponivel = new Alojamento { Id = 2, Nome = "Quarto 102", Estado = EstadoAlojamento.Indisponivel };
+            _mockAlojamentoRepo.Setup(r => r.GetAll()).Returns(new List<Alojamento> { alojamento, indisponivel });
+            _mockReservaRepo.Setup(r => r.GetAll()).Returns(new List<Reserva>());
+
+            // Act
+            var resultado = _alojamentoService.BuscarDisponiveisPorPeriodo(DateTime.Today.AddDays(30), DateTime.Today.AddDays(33)).ToList();
+
+            // Assert
+            Assert.That(resultado, Is.EquivalentTo(new[] { alojamento }));
+        }
 
         [Test]
         public void BuscarDisponiveisPorPeriodo_ComSobreposicao_DeveFiltrarAlojamento()
@@ -88,7 +129,7 @@ namespace POOfase1trabalho13_11.Tests.Services
             var checkOut = new DateTime(2024, 10, 15);
 
             var alojamento = new Alojamento { Id = 1, Nome = "Quarto 101" };
-            _mockAlojamentoRepo.Setup(r => r.BuscarDisponiveis()).Returns(new List<Alojamento> { alojamento });
+            _mockAlojamentoRepo.Setup(r => r.GetAll()).Returns(new List<Alojamento> { alojamento });
 
             // Simular uma reserva que choca com as datas (Ex: 12 a 20 de Outubro)
             var reservaConflitante = new Reserva

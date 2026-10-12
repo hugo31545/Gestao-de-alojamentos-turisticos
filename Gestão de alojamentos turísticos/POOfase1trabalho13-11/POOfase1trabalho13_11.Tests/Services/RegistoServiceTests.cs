@@ -94,14 +94,8 @@ namespace POOfase1trabalho13_11.Tests.Services
             // Arrange
             var dataCorte = new DateTime(2024, 1, 1);
 
-            var logParaApagar = new Registo(1, "A", "M", "U", "C", 1, new DateTime(2023, 12, 31));
-            var logParaManter = new Registo(2, "A", "M", "U", "C", 2, new DateTime(2024, 1, 2));
-
-            var lista = new List<Registo> { logParaApagar, logParaManter };
-            _mockRegistoRepo.Setup(r => r.GetAll()).Returns(lista);
-
-            // Simula sucesso ao remover o ID 1
-            _mockRegistoRepo.Setup(r => r.Remove(1)).Returns(true);
+            // Simula o repositório a eliminar 1 registo anterior à data de corte
+            _mockRegistoRepo.Setup(r => r.RemoverAnterioresA(dataCorte)).Returns(1);
 
             // Act
             bool resultado = _registoService.LimparLogsAntigos(dataCorte, out string mensagem);
@@ -110,16 +104,16 @@ namespace POOfase1trabalho13_11.Tests.Services
             Assert.IsTrue(resultado);
             Assert.That(mensagem, Does.Contain("1 registos antigos foram removidos."));
 
-          
-            _mockRegistoRepo.Verify(r => r.Remove(1), Times.Once);
-            _mockRegistoRepo.Verify(r => r.Remove(2), Times.Never);
+            // Os logs nunca são removidos um a um (Remove lança NotSupportedException no repositório real)
+            _mockRegistoRepo.Verify(r => r.RemoverAnterioresA(dataCorte), Times.Once);
+            _mockRegistoRepo.Verify(r => r.Remove(It.IsAny<int>()), Times.Never);
         }
 
         [Test]
         public void LimparLogsAntigos_QuandoOcorreExcecao_RetornaFalse()
         {
             // Arrange
-            _mockRegistoRepo.Setup(r => r.GetAll()).Throws(new Exception("Erro de disco"));
+            _mockRegistoRepo.Setup(r => r.RemoverAnterioresA(It.IsAny<DateTime>())).Throws(new Exception("Erro de disco"));
 
             // Act
             bool resultado = _registoService.LimparLogsAntigos(DateTime.Now, out string mensagem);

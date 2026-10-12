@@ -5,13 +5,14 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.ViewModels.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
+using POOfase1trabalho13_11.Models.Validation;
 using POOfase1trabalho13_11.ViewModels.Commands;
 
 namespace POOfase1trabalho13_11.ViewModels
@@ -22,6 +23,8 @@ namespace POOfase1trabalho13_11.ViewModels
     /// </summary>
     public class ClienteViewModel : BaseViewModel
     {
+        private readonly IDialogService _dialog;
+
         #region Fields
         private readonly IClienteService _clienteService;
         private ObservableCollection<Cliente> _listaClientes;
@@ -86,8 +89,9 @@ namespace POOfase1trabalho13_11.ViewModels
         /// <summary>
         /// Inicializa a ViewModel injetando o serviço de clientes.
         /// </summary>
-        public ClienteViewModel(IClienteService clienteService)
+        public ClienteViewModel(IClienteService clienteService, IDialogService dialogService)
         {
+            _dialog = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
             _listaClientes = new ObservableCollection<Cliente>();
             _clienteEmEdicao = new Cliente();
@@ -145,11 +149,10 @@ namespace POOfase1trabalho13_11.ViewModels
         private bool PodeGravar()
         {
            
+            // Mesmas regras de formato que o ClienteService
             return !string.IsNullOrWhiteSpace(ClienteEmEdicao?.Nome) &&
-                   !string.IsNullOrWhiteSpace(ClienteEmEdicao?.Email) &&
-                   ClienteEmEdicao.Email.Contains("@") &&
-                   !string.IsNullOrWhiteSpace(ClienteEmEdicao?.Nif) &&
-                   ClienteEmEdicao.Nif.Length >= 9;
+                   Validador.EmailValido(ClienteEmEdicao.Email) &&
+                   Validador.NifValido(ClienteEmEdicao.Nif);
         }
 
 
@@ -186,18 +189,18 @@ namespace POOfase1trabalho13_11.ViewModels
 
                 if (sucesso)
                 {
-                    MessageBox.Show(mensagem, "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _dialog.Informar(mensagem, "Sucesso");
                     CarregarDados();
                     ExecutarNovo();
                 }
                 else
                 {
-                    MessageBox.Show(mensagem, "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _dialog.Avisar(mensagem, "Aviso");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao gravar: {ex.Message}", "Erro Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialog.Erro($"Erro ao gravar: {ex.Message}", "Erro Crítico");
             }
         }
 
@@ -209,20 +212,19 @@ namespace POOfase1trabalho13_11.ViewModels
         {
             if (ClienteSelecionado == null) return;
 
-            var resultado = MessageBox.Show($"Tem a certeza que deseja remover o cliente {ClienteSelecionado.Nome}?\nEsta ação não pode ser desfeita.",
-                                           "Confirmar Remoção", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            bool resultado = _dialog.Confirmar($"Tem a certeza que deseja remover o cliente {ClienteSelecionado.Nome}?\nEsta ação não pode ser desfeita.", "Confirmar Remoção");
 
-            if (resultado == MessageBoxResult.Yes)
+            if (resultado)
             {
                 if (_clienteService.RemoverCliente(ClienteSelecionado.Id, out string mensagem))
                 {
-                    MessageBox.Show(mensagem, "Removido", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _dialog.Informar(mensagem, "Removido");
                     CarregarDados();
                     ExecutarNovo();
                 }
                 else
                 {
-                    MessageBox.Show(mensagem, "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _dialog.Erro(mensagem, "Erro");
                 }
             }
         }

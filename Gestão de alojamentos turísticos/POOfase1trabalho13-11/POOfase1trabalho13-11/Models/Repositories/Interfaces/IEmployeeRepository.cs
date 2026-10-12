@@ -14,16 +14,15 @@ namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
     /// </summary>
     public interface IEmployeeRepository : IRepository<Employee>
     {
+        // O método Save é herdado de IRepository<Employee>.
 
         #region Methods
         /// <summary>
-        /// Guarda um funcionário no sistema, decidindo internamente 
-        /// se deve criar um novo registo ou atualizar um existente com base no ID.
+        /// Procura um funcionário pelo email (sem distinguir maiúsculas de minúsculas).
         /// </summary>
-        /// <param name="employee">O objeto funcionário (<see cref="Employee"/>) a persistir.</param>
-        /// <returns>True se a operação foi bem-sucedida; caso contrário, false.</returns>
-        bool Save(Employee employee);
-
+        /// <param name="email">O email a procurar.</param>
+        /// <returns>O funcionário encontrado ou <c>null</c>.</returns>
+        Employee? GetByEmail(string email);
         #endregion
     }
 }

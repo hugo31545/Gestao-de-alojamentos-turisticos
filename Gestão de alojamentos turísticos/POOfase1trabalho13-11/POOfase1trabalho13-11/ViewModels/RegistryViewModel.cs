@@ -5,6 +5,7 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.ViewModels.Services;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
 using POOfase1trabalho13_11.ViewModels.Commands;
@@ -12,7 +13,6 @@ using POOfase1trabalho13_11.Views.Enums;
 using POOfase1trabalho13_11.Views.Factories;
 using POOfase1trabalho13_11.Views.Interfaces;
 using System;
-using System.Windows;
 using System.Windows.Input;
 
 namespace POOfase1trabalho13_11.ViewModels
@@ -24,6 +24,8 @@ namespace POOfase1trabalho13_11.ViewModels
     /// </summary>
     public class RegistryViewModel : BaseViewModel
     {
+        private readonly IDialogService _dialog;
+
         #region Fields
         private readonly IEmployeeService _employeeService;
         private readonly IRegistoService _registoService;
@@ -99,8 +101,9 @@ namespace POOfase1trabalho13_11.ViewModels
 
         #region Constructor
         public RegistryViewModel(IEmployeeService employeeService, IRegistoService registoService,
-                         IViewFactory viewFactory, IAuthenticationService authService)
+                         IViewFactory viewFactory, IAuthenticationService authService, IDialogService dialogService)
         {
+            _dialog = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _employeeService = employeeService;
             _registoService = registoService;
             _viewFactory = viewFactory;
@@ -124,7 +127,7 @@ namespace POOfase1trabalho13_11.ViewModels
                    !string.IsNullOrWhiteSpace(NIF) &&
                    !string.IsNullOrWhiteSpace(Password) &&
                    Password == PasswordConfirmacao && // Passwords devem coincidir
-                   Password.Length >= 4;
+                   Password.Length >= 6; // Mesmo mínimo do PasswordValidator
         }
 
         private void NotificarComandos()
@@ -148,41 +151,45 @@ namespace POOfase1trabalho13_11.ViewModels
                     return;
                 }
 
-                // Verificar NIF duplicado (Regra de Negócio do Employee)
-                if (_employeeService.VerificarNifDuplicado(NIF))
+                // Validar os dados do funcionário (formato e duplicados) antes de gravar
+                if (!_employeeService.ValidarNovoFuncionario(Nome, Email, NIF, out string mensagem))
                 {
-                    MensagemFeedback = "Erro: Este NIF já está registado em outro funcionário.";
+                    MensagemFeedback = $"Erro: {mensagem}";
                     return;
                 }
 
                 // 2. EXECUÇÃO DA CRIAÇÃO (Ordem lógica)
 
-                // Primeiro tentamos criar o User (Login)
-               
-                bool userCriado = _authService.CreateUser(Email, Password, PasswordConfirmacao);
-
-                if (!userCriado)
+                // Primeiro criamos o User (Login)
+                if (!_authService.CreateUser(Email, Password, PasswordConfirmacao, out mensagem))
                 {
-                    MensagemFeedback = "Erro: O Email (Username) já está a ser utilizado.";
+                    MensagemFeedback = $"Erro: {mensagem}";
                     return;
                 }
 
                 // Se o utilizador foi criado, criamos o perfil de funcionário
-                bool sucessoFunc = _employeeService.AdicionarFuncionario(Nome, Email, NIF, Cargo);
-
-                if (sucessoFunc)
+                if (!_employeeService.AdicionarFuncionario(Nome, Email, NIF, Cargo))
                 {
-                    MessageBox.Show("Registo completo! Utilizador e Funcionário criados.", "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Desfaz a criação do User para não deixar uma conta sem funcionário
+                    _authService.RemoveUser(Email);
+                    MensagemFeedback = "Erro ao guardar os detalhes do funcionário. Nenhum dado foi gravado.";
+                    return;
+                }
 
-                    // Navegação
+                _dialog.Informar("Registo completo! Utilizador e Funcionário criados.", "Sucesso");
+
+                if (CloseWindowAction != null)
+                {
+                    // Janela de registo aberta a partir do Login: regressa ao Login
                     var loginWin = _viewFactory.CreateView(ViewType.Login);
                     loginWin.Show();
-                    CloseWindowAction?.Invoke();
+                    CloseWindowAction.Invoke();
                 }
                 else
                 {
-                    // Caso extremo: User criado mas Employee falhou
-                    MensagemFeedback = "O utilizador foi criado, mas houve um erro ao guardar os detalhes do funcionário.";
+                    // Página dentro da janela principal: fica na página, pronta para outro registo
+                    LimparCampos();
+                    MensagemFeedback = string.Empty;
                 }
             }
             catch (Exception ex)
@@ -200,10 +207,15 @@ namespace POOfase1trabalho13_11.ViewModels
             _email = string.Empty;
             _nif = string.Empty;
             _cargo = "Funcionário";
+            _password = string.Empty;
+            _passwordConfirmacao = string.Empty;
             OnPropertyChanged(nameof(Nome));
             OnPropertyChanged(nameof(Email));
             OnPropertyChanged(nameof(NIF));
             OnPropertyChanged(nameof(Cargo));
+            OnPropertyChanged(nameof(Password));
+            OnPropertyChanged(nameof(PasswordConfirmacao));
+            NotificarComandos();
         }
         #endregion
     }

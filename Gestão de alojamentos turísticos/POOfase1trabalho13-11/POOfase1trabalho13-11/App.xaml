@@ -28,6 +28,10 @@
                 <v:AuditoriaView />
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type vm:RelatoriosViewModel}">
+                <v:RelatoriosView />
+            </DataTemplate>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

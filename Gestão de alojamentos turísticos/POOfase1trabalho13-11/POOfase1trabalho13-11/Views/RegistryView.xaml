@@ -2,8 +2,9 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:helpers="clr-namespace:POOfase1trabalho13_11.Views.Helpers"
+             mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="400">
 
     <Grid Background="#F5F5F5">
@@ -38,12 +39,12 @@
                 <TextBox Text="{Binding NIF, UpdateSourceTrigger=PropertyChanged}" 
                          Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
                 <Label Content="Password" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" 
-                        Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+                <PasswordBox helpers:PasswordBoxHelper.BoundPassword="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
 
                 <Label Content="Confirmar Password" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding PasswordConfirmacao, UpdateSourceTrigger=PropertyChanged}" 
-                        Height="30" VerticalContentAlignment="Center" Margin="0,0,0,20"/>
+                <PasswordBox helpers:PasswordBoxHelper.BoundPassword="{Binding PasswordConfirmacao, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Height="30" VerticalContentAlignment="Center" Margin="0,0,0,20"/>
                 
                 <Label Content="Cargo" FontWeight="SemiBold"/>
                 <TextBox Text="{Binding Cargo, UpdateSourceTrigger=PropertyChanged}" 

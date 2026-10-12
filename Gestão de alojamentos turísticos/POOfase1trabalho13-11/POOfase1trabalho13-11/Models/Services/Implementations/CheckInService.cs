@@ -59,32 +59,45 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             var reserva = _reservaRepo.GetById(reservaId);
             if (reserva == null) { mensagem = "Erro: Reserva não encontrada."; return false; }
 
-            // 2. Validar estado atual (Só se faz check-in de reservas confirmadas ou pendentes)
+            // 2. Validar estado atual (só se faz check-in de reservas confirmadas)
             if (reserva.Estado == EstadoReserva.CheckInRealizado) { mensagem = "Aviso: O Check-In já foi realizado anteriormente."; return false; }
             if (reserva.Estado == EstadoReserva.Cancelada) { mensagem = "Erro: Não é possível fazer check-in de uma reserva cancelada."; return false; }
+            if (reserva.Estado != EstadoReserva.Confirmada) { mensagem = $"Erro: Só é possível fazer check-in de reservas confirmadas (estado atual: {reserva.Estado})."; return false; }
 
-            // 3. Validação de Data (Regra: Não permitir check-in antecipado ao dia previsto)
+            // 3. Validação de Data (Regra: Não permitir check-in antecipado ao dia previsto nem depois da saída)
             if (DateTime.Now.Date < reserva.DataCheckIn.Date)
             {
                 mensagem = $"Erro: O check-in só é permitido a partir do dia {reserva.DataCheckIn:dd/MM/yyyy}.";
                 return false;
             }
+            if (DateTime.Now.Date > reserva.DataCheckOut.Date)
+            {
+                mensagem = $"Erro: A data de saída desta reserva ({reserva.DataCheckOut:dd/MM/yyyy}) já passou.";
+                return false;
+            }
+
+            // 4. O alojamento tem de estar livre (ex.: o hóspede anterior ainda não fez check-out)
+            var alojamento = _alojamentoRepo.GetById(reserva.AlojamentoId);
+            if (alojamento != null && (alojamento.Estado == EstadoAlojamento.Ocupado || alojamento.Estado == EstadoAlojamento.Indisponivel))
+            {
+                mensagem = $"Erro: O alojamento ainda não está pronto (Estado: {alojamento.Estado}).";
+                return false;
+            }
 
             try
             {
-                // 4. Atualizar a Reserva
-                reserva.Estado = EstadoReserva.CheckInRealizado;
+                // 5. Atualizar a Reserva
+                reserva.RegistarCheckIn();
                 _reservaRepo.Update(reserva);
 
-                // 5. Atualizar o Alojamento (Mudar para Ocupado)
-                var alojamento = _alojamentoRepo.GetById(reserva.AlojamentoId);
+                // 6. Atualizar o Alojamento (Mudar para Ocupado)
                 if (alojamento != null)
                 {
                     alojamento.Estado = EstadoAlojamento.Ocupado;
                     _alojamentoRepo.Update(alojamento);
                 }
 
-                // 6. Auditoria de segurança
+                // 7. Auditoria de segurança
                 _registoRepo.Add(new Registo(0, "CheckIn",
                     $"Check-in realizado para Reserva {reservaId}",
                     funcionarioResponsavel, "CHECKIN", reservaId, DateTime.Now));
@@ -115,7 +128,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             try
             {
                 // 1. Finalizar Reserva
-                reserva.Estado = EstadoReserva.Finalizada;
+                reserva.RegistarCheckOut();
                 _reservaRepo.Update(reserva);
 
                 // 2. Libertar Alojamento (Mudar para Manutenção para garantir limpeza)

@@ -5,6 +5,8 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Entities;
+
 namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
 {
     /// <summary>
@@ -27,9 +29,9 @@ namespace POOfase1trabalho13_11.Models.Repositories.Interfaces
         /// garantindo a persistência das credenciais de acesso.
         /// </summary>
         /// <param name="username">O nome de utilizador único para a nova conta.</param>
-        /// <param name="password">A palavra-passe (deve chegar a este método já devidamente protegida).</param>
+        /// <param name="passwordHash">O hash da palavra-passe, gerado por <c>PasswordHasher.Hash</c>.</param>
         /// <returns><c>true</c> se o utilizador foi criado com sucesso; <c>false</c> se o username já existir.</returns>
-        bool CreateUser(string username, string password);
+        bool CreateUser(string username, string passwordHash);
 
         #endregion
     }

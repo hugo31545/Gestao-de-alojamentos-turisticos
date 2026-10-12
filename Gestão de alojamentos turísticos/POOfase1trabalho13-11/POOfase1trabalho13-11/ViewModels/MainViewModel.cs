@@ -5,12 +5,13 @@
 //    <version>2</version>
 //    <author>Hugo Gomes</author>
 //-----------------------------------------------------------------
+using POOfase1trabalho13_11.Models.Services.Interfaces;
+using POOfase1trabalho13_11.ViewModels.Services;
 using Microsoft.Extensions.DependencyInjection;
 using POOfase1trabalho13_11.ViewModels.Commands;
 using POOfase1trabalho13_11.Views.Enums;
 using POOfase1trabalho13_11.Views.Interfaces;
 using System;
-using System.Windows;
 using System.Windows.Input;
 
 namespace POOfase1trabalho13_11.ViewModels
@@ -21,11 +22,14 @@ namespace POOfase1trabalho13_11.ViewModels
     /// </summary>
     public class MainViewModel : BaseViewModel
     {
+        private readonly IDialogService _dialog;
+
         #region Fields
         private readonly IServiceProvider _serviceProvider;
         private object? _currentView; 
         private string _usernameLogado = string.Empty;
         private readonly IViewFactory _viewFactory;
+        private readonly ISessionService _sessao;
         
         #endregion
 
@@ -62,6 +66,7 @@ namespace POOfase1trabalho13_11.ViewModels
         public ICommand ShowClientesCommand { get; }
         public ICommand ShowReservasCommand { get; }
         public ICommand ShowAuditoriaCommand { get; }
+        public ICommand ShowRelatoriosCommand { get; }
         public ICommand ShowRegistryCommand { get; }
         public ICommand LogoutCommand { get; }
         #endregion
@@ -70,18 +75,21 @@ namespace POOfase1trabalho13_11.ViewModels
         /// <summary>
         /// Inicializa a MainViewModel e define a página inicial.
         /// </summary>
-        public MainViewModel(IServiceProvider serviceProvider, IViewFactory viewFactory)
+        public MainViewModel(IServiceProvider serviceProvider, IViewFactory viewFactory, ISessionService sessao, IDialogService dialogService)
         {
+            _dialog = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _viewFactory = viewFactory;
+            _sessao = sessao ?? throw new ArgumentNullException(nameof(sessao));
             
-            UsernameLogado = "Utilizador";
+            UsernameLogado = _sessao.UtilizadorAtual ?? "Utilizador";
 
             // Mapeamento de comandos para os métodos de navegação genéricos
             ShowAlojamentosCommand = new ViewModelCommand(p => Navegar<AlojamentoViewModel>());
             ShowClientesCommand = new ViewModelCommand(p => Navegar<ClienteViewModel>());
             ShowReservasCommand = new ViewModelCommand(p => Navegar<ReservaViewModel>());
             ShowAuditoriaCommand = new ViewModelCommand(p => Navegar<AuditoriaViewModel>());
+            ShowRelatoriosCommand = new ViewModelCommand(p => Navegar<RelatoriosViewModel>());
            
             ShowRegistryCommand = new ViewModelCommand(p => Navegar<RegistryViewModel>());
 
@@ -109,8 +117,7 @@ namespace POOfase1trabalho13_11.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao carregar a página: {ex.Message}", "Erro de Navegação",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialog.Erro($"Erro ao carregar a página: {ex.Message}", "Erro de Navegação");
                 System.Diagnostics.Debug.WriteLine($"Erro crítico DI: {ex}");
             }
         }
@@ -121,11 +128,12 @@ namespace POOfase1trabalho13_11.ViewModels
         /// </summary>
         private void ExecutarLogout()
         {
-            var result = MessageBox.Show("Deseja realmente sair do sistema?", "Confirmar Logout",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            bool result = _dialog.Confirmar("Deseja realmente sair do sistema?", "Confirmar Logout");
 
-            if (result == MessageBoxResult.Yes)
+            if (result)
             {
+                _sessao.Terminar();
+
                 // Regressa ao Login usando a Factory
                 var loginWindow = _viewFactory.CreateView(ViewType.Login);
                 loginWindow.Show();

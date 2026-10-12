@@ -91,7 +91,7 @@ namespace POOfase1trabalho13_11.Tests.Entities
                 // NIF com 10 dígitos
                 var ex10 = Assert.Throws<ArgumentException>(() => employee.NIF = "1234567890");
 
-                Assert.That(ex8.Message, Is.EqualTo("NIF deve ter 9 dígitos."));
+                Assert.That(ex8!.Message, Is.EqualTo("NIF deve ter 9 dígitos."));
             });
         }
 

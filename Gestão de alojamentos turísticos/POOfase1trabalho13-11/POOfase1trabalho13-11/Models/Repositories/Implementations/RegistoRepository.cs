@@ -71,17 +71,18 @@ namespace POOfase1trabalho13_11.Models.Repositories.Implementations
 
 
         /// <summary>
-        /// Adiciona um novo log de auditoria ao ficheiro, gerando automaticamente um identificador único.
+        /// Política de retenção: elimina, numa única gravação, os logs anteriores à data de corte.
+        /// É a única forma permitida de apagar logs (não é possível remover um log individual).
         /// </summary>
-        /// <param name="log">O objeto de log a registar.</param>
-        public override void Add(Registo log)
+        /// <param name="dataCorte">Logs com data inferior a esta são eliminados.</param>
+        /// <returns>O número de logs eliminados.</returns>
+        public int RemoverAnterioresA(DateTime dataCorte)
         {
-            // Auto-incremento de segurança para garantir a ordem cronológica dos logs
-            if (log.Id <= 0)
-                log.Id = Items.Any() ? Items.Max(r => r.Id) + 1 : 1;
-
-            base.Add(log);
+            int removidos = Items.RemoveAll(r => r.DataRegisto < dataCorte);
+            if (removidos > 0) SaveToFile();
+            return removidos;
         }
+
 
     }
 }

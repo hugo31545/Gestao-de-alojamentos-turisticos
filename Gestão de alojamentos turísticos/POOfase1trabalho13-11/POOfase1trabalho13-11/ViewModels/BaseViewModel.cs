@@ -50,7 +50,7 @@ namespace POOfase1trabalho13_11.ViewModels
         /// Dispara manualmente o evento <see cref="PropertyChanged"/>.
         /// </summary>
         /// <param name="propertyName">Nome da propriedade que mudou.</param>
-        protected void OnPropertyChanged(string propertyName)
+        protected void OnPropertyChanged(string? propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

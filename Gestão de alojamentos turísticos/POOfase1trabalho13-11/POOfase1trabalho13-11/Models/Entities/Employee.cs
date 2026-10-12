@@ -8,6 +8,7 @@
 using System;
 using System.Text.Json.Serialization;
 using POOfase1trabalho13_11.Models.Entities.Interfaces;
+using POOfase1trabalho13_11.Models.Validation;
 
 namespace POOfase1trabalho13_11.Models.Entities
 {
@@ -54,11 +55,11 @@ namespace POOfase1trabalho13_11.Models.Entities
         /// <summary>
         /// Obtém ou define o Número de Identificação Fiscal (NIF) do funcionário.
         /// </summary>
-        /// <exception cref="ArgumentException">Lançada se o NIF não contiver exatamente 9 dígitos.</exception>
+        /// <exception cref="ArgumentException">Lançada se o NIF não contiver exatamente 9 dígitos numéricos.</exception>
         public string NIF
         {
             get => _nif;
-            set => _nif = value?.Length == 9 ? value : throw new ArgumentException("NIF deve ter 9 dígitos.");
+            set => _nif = Validador.NifValido(value) ? value : throw new ArgumentException("NIF deve ter 9 dígitos.");
         }
 
         /// <summary>

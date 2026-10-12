@@ -11,6 +11,7 @@ using System.Linq;
 using POOfase1trabalho13_11.Models.Entities;
 using POOfase1trabalho13_11.Models.Repositories.Interfaces;
 using POOfase1trabalho13_11.Models.Services.Interfaces;
+using POOfase1trabalho13_11.Models.Validation;
 
 namespace POOfase1trabalho13_11.Models.Services.Implementations
 {
@@ -27,6 +28,12 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IRegistoRepository _registoRepository;
 
+        private readonly ISessionService? _sessao;
+
+        /// <summary>
+        /// Autor registado na auditoria: o utilizador com sessão iniciada ou "Sistema".
+        /// </summary>
+        private string Autor => _sessao?.NomeParaAuditoria ?? "Sistema";
         #endregion
 
         #region Constructors
@@ -34,8 +41,9 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// <summary>
         /// Inicializa o serviço injetando as dependências de persistência e auditoria.
         /// </summary>
-        public EmployeeService(IEmployeeRepository employeeRepository, IRegistoRepository registoRepository)
+        public EmployeeService(IEmployeeRepository employeeRepository, IRegistoRepository registoRepository, ISessionService? sessao = null)
         {
+            _sessao = sessao;
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _registoRepository = registoRepository ?? throw new ArgumentNullException(nameof(registoRepository));
         }
@@ -65,28 +73,73 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
         /// </summary>
         public Employee? ObterPorId(int id) => _employeeRepository.GetById(id);
 
+        /// <summary>
+        /// Valida os dados de um novo funcionário sem gravar nada.
+        /// </summary>
+        public bool ValidarNovoFuncionario(string nome, string email, string nif, out string mensagem)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
+            {
+                mensagem = "O nome é obrigatório.";
+                return false;
+            }
+
+            if (!Validador.EmailValido(email))
+            {
+                mensagem = "O email não tem um formato válido (ex.: nome@dominio.pt).";
+                return false;
+            }
+
+            if (!Validador.NifValido(nif))
+            {
+                mensagem = "O NIF deve ter exatamente 9 dígitos.";
+                return false;
+            }
+
+            if (VerificarNifDuplicado(nif))
+            {
+                mensagem = "Este NIF já está registado em outro funcionário.";
+                return false;
+            }
+
+            if (_employeeRepository.GetByEmail(email) != null)
+            {
+                mensagem = "Este email já está registado em outro funcionário.";
+                return false;
+            }
+
+            mensagem = string.Empty;
+            return true;
+        }
+
         #endregion
 
         #region Write Operations
 
         /// <summary>
         /// Atalho para criação rápida de um funcionário a partir de dados básicos.
+        /// Dados inválidos (ex.: NIF com formato errado) devolvem false em vez de lançar exceção.
         /// </summary>
         public bool AdicionarFuncionario(string nome, string email, string nif, string cargo)
         {
-            var novoFuncionario = new Employee
+            Employee novoFuncionario;
+            try
             {
-                Nome = nome,
-                Email = email,
-                NIF = nif,
-                Cargo = cargo,
-                Id = 0 // Garante que o repositório trate como novo
-            };
+                novoFuncionario = new Employee
+                {
+                    Nome = nome,
+                    Email = email,
+                    NIF = nif,
+                    Cargo = cargo,
+                    Id = 0 // Garante que o repositório trate como novo
+                };
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
 
-            string msg;
-            bool resultado = GuardarFuncionario(novoFuncionario, out msg);
-            
-            return resultado;
+            return GuardarFuncionario(novoFuncionario, out _);
         }
 
         /// <summary>
@@ -126,7 +179,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
                         0,
                         "Employee",
                         $"Funcionário {funcionario.Nome} ({funcionario.Cargo}) guardado.",
-                        "Sistema",
+                        Autor,
                         eNovo ? "CREATE" : "UPDATE",
                         funcionario.Id,
                         DateTime.Now));
@@ -162,7 +215,7 @@ namespace POOfase1trabalho13_11.Models.Services.Implementations
             {
                 _registoRepository.Add(new Registo(0, "Employee",
                     $"Funcionário removido: {funcionario.Nome}",
-                    "Sistema", "DELETE", id, DateTime.Now));
+                    Autor, "DELETE", id, DateTime.Now));
 
                 mensagem = "Funcionário removido com sucesso.";
                 return true;
