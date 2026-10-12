@@ -1,28 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace POOfase1trabalho13_11.Views
 {
     /// <summary>
-    /// Interaction logic for RegistryView.xaml
+    /// Formulário de registo de funcionário. Só trata do foco inicial: a lógica está na RegistryViewModel.
     /// </summary>
     public partial class RegistryView : UserControl
     {
         public RegistryView()
         {
             InitializeComponent();
+
+            // O cursor começa no primeiro campo
+            Loaded += (_, _) => CampoNome.FocusInput();
         }
     }
 }

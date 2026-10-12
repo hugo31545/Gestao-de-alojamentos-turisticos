@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:POOfase1trabalho13_11.Views"
         Title="Registo de Utilizador" 
-        Height="550" Width="450"
+        Height="780" Width="470" MinHeight="420"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5">
 

@@ -1,80 +1,110 @@
-﻿<UserControl x:Class="POOfase1trabalho13_11.Views.RegistryView"
+<UserControl x:Class="POOfase1trabalho13_11.Views.RegistryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:helpers="clr-namespace:POOfase1trabalho13_11.Views.Helpers"
+             xmlns:controls="clr-namespace:POOfase1trabalho13_11.Views.Controls"
              mc:Ignorable="d"
-             d:DesignHeight="500" d:DesignWidth="400">
+             d:DesignHeight="760" d:DesignWidth="450">
 
-    <Grid Background="#F5F5F5">
-        <Border VerticalAlignment="Center" 
-                HorizontalAlignment="Center" 
-                Background="White" 
-                Width="350" 
-                Padding="25"
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolParaVisibilidade"/>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="#F5F5F5">
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="White"
+                Width="380"
+                Padding="28"
+                Margin="20"
                 CornerRadius="12">
 
             <Border.Effect>
-                <DropShadowEffect BlurRadius="15" Opacity="0.1" ShadowDepth="2"/>
+                <DropShadowEffect BlurRadius="15" Opacity="0.12" ShadowDepth="2"/>
             </Border.Effect>
 
             <StackPanel>
-                <TextBlock Text="Registar Funcionário" 
-                           FontSize="20" 
-                           FontWeight="Bold" 
+                <TextBlock Text="Registar Funcionário"
+                           FontSize="20"
+                           FontWeight="Bold"
                            Foreground="#2C3E50"
-                           HorizontalAlignment="Center" 
-                           Margin="0,0,0,20"/>
+                           HorizontalAlignment="Center"/>
 
-                <Label Content="Nome Completo" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding Nome, UpdateSourceTrigger=PropertyChanged}" 
-                         Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
-
-                <Label Content="Email" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" 
-                         Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
-
-                <Label Content="NIF" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding NIF, UpdateSourceTrigger=PropertyChanged}" 
-                         Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
-                <Label Content="Password" FontWeight="SemiBold"/>
-                <PasswordBox helpers:PasswordBoxHelper.BoundPassword="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
-
-                <Label Content="Confirmar Password" FontWeight="SemiBold"/>
-                <PasswordBox helpers:PasswordBoxHelper.BoundPassword="{Binding PasswordConfirmacao, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             Height="30" VerticalContentAlignment="Center" Margin="0,0,0,20"/>
-                
-                <Label Content="Cargo" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding Cargo, UpdateSourceTrigger=PropertyChanged}" 
-                         Height="30" VerticalContentAlignment="Center" Margin="0,0,0,20"/>
-
-                <Button Content="Finalizar Registo" 
-                        Command="{Binding RegistarCommand}" 
-                        Height="40"
-                        Background="#27AE60" 
-                        Foreground="White" 
-                        FontWeight="Bold"
-                        Cursor="Hand">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Style.Triggers>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.5"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-
-                <TextBlock Text="{Binding MensagemFeedback}" 
-                           Foreground="#E74C3C" 
-                           HorizontalAlignment="Center" 
-                           Margin="0,15,0,0" 
+                <TextBlock Text="O email que indicar será o seu nome de utilizador para entrar na aplicação."
+                           Foreground="#7F8C8D"
                            TextWrapping="Wrap"
-                           FontWeight="Medium"/>
+                           TextAlignment="Center"
+                           Margin="0,6,0,20"/>
+
+                <controls:FormField x:Name="CampoNome" Label="Nome completo"
+                                    Placeholder="Ex.: Ana Silva"
+                                    Text="{Binding Nome, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Error="{Binding NomeErro}"
+                                    Margin="0,0,0,12"/>
+
+                <controls:FormField Label="Email"
+                                    Placeholder="nome@dominio.pt"
+                                    Text="{Binding Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Error="{Binding EmailErro}"
+                                    Margin="0,0,0,12"/>
+
+                <controls:FormField Label="NIF"
+                                    Placeholder="9 dígitos, ex.: 123456789"
+                                    Text="{Binding NIF, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Error="{Binding NifErro}"
+                                    Margin="0,0,0,12"/>
+
+                <controls:FormField Label="Password"
+                                    Placeholder="Mínimo 6 caracteres e 1 número"
+                                    IsPassword="True"
+                                    Text="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Error="{Binding PasswordErro}"
+                                    Margin="0,0,0,12"/>
+
+                <controls:FormField Label="Confirmar password"
+                                    Placeholder="Repita a password"
+                                    IsPassword="True"
+                                    Text="{Binding PasswordConfirmacao, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Error="{Binding ConfirmacaoErro}"
+                                    Margin="0,0,0,12"/>
+
+                <controls:FormField Label="Cargo"
+                                    Placeholder="Ex.: Rececionista"
+                                    Text="{Binding Cargo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Error="{Binding CargoErro}"
+                                    Margin="0,0,0,20"/>
+
+                <Button Content="Finalizar registo"
+                        Style="{StaticResource BotaoPrimario}"
+                        Command="{Binding RegistarCommand}"
+                        IsDefault="True"
+                        Background="#27AE60"/>
+
+                <!-- Explica porque é que o botão está desativado -->
+                <TextBlock Text="{Binding AjudaFormulario}"
+                           Foreground="#7F8C8D"
+                           FontSize="11.5"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Margin="0,8,0,0"/>
+
+                <!-- Erro devolvido pelo registo (ex.: email já existe) -->
+                <TextBlock Text="{Binding MensagemFeedback}"
+                           Foreground="#C0392B"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Margin="0,10,0,0"/>
+
+                <Button Command="{Binding VoltarCommand}"
+                        Visibility="{Binding PodeVoltar, Converter={StaticResource BoolParaVisibilidade}}"
+                        Style="{StaticResource BotaoLink}"
+                        Margin="0,16,0,0"
+                        HorizontalAlignment="Center">
+                    <TextBlock Text="← Voltar ao início de sessão" Foreground="#2980B9" FontWeight="SemiBold" TextDecorations="Underline"/>
+                </Button>
             </StackPanel>
         </Border>
-    </Grid>
+    </ScrollViewer>
 </UserControl>
